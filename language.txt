@@ -1,6 +1,7 @@
 code blocks
 
 A code block is a set of statements with its own unique scope:
+
 	{
 		x: 1;
 		y: 2;
@@ -15,7 +16,7 @@ variables are declared and defined in name:value syntax like an object in other 
 	x: 1;
 	y: 2;
 	
-This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," and {x = 1} should be read as x equals one.
+This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," and {x = 1} should be read as "x equals one."
 
 you may pass values into the local scope of a code block by linking them with a tilde character. Values not passed into the local scope will still be available as detailed above. 
 
@@ -99,16 +100,14 @@ If a constant is alone on a line (like {0;}), it is unnamed but still added to t
 
 	{0; 2;}~$sum;
 	
-A final type of code block is "unterminated". It is evaluated, but does not collapse into a value. Instead, it evaluates to a pointer to its unterminated scope. It is signed by the "*" character.
+A final type of code block is "unterminated". if a code block does not return anything (either explicitly with return; or implicitly with a final line without a semicolon), it will be unterminated. Unterminated code blocks return a pointer to their active scope.
 
-	items: *{
+	items: {
 		x: 1;
-		y: 2	
+		y: 2;	
 	}
 	
-It can also be evaluated:
-
-	$items;
+if a code block is intended to be unterminated, it can be prefixed with a "*" char. code blocks that do not terminate but have no "*" prefix will produce a warning upon compilation. 
 
 unterminated code blocks' local scope can be accessed from outside by either name or index. To access a named value in a code block, use a ".":
 
