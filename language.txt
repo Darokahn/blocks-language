@@ -49,6 +49,12 @@ but no direct equivalent to for loops. Since a for loop is only shorthand for a 
 	
 	{0;}~(int i)[i < 3]{some code; i++};
 
+tokens 'if', 'while', 'do', and 'for' will be ignored by the compiler and may be included for readability. This means they are not valid names.
+
+	if [i < 3]{
+		some code;
+	}
+
 a code block that links from another scope depends on that scope's execution to execute.
 
 	[false]{1; 2}~$sum; // sum is unreachable.
