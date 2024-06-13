@@ -63,9 +63,9 @@ A code block without "$" prefix will "collapse" into its return value after fail
 
 Static code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if return is explicitly called.
 
-to create a static instance of a dynamic code block (essentially running it), prefix it with another "$". Think of the dollar symbols as cancelling each other out:
+to create a static instance of a dynamic code block (essentially running it), prefix it with another "$". Think of the dollar symbols as canceling each other out:
 	
-	// this is almost equivalent to a static code block, with some differences described later:
+	// this is equivalent to a static code block:
 	$${some code here;}; 
 	
 	// this saves the code block and then instantiates it.
@@ -82,8 +82,6 @@ a static code block prefixed with a "!" inside a dynamic code block will collaps
 	sum: $(int x, int y){ !{x} + y };
 	
 In the above case, the "sum" code block (which behaves like a function) does not behave as one might expect upon looking at it. Because x is inside a static code block prefixed by "!" (called pseudo-static), it is evaluated once and never again, somewhat like a macro. when sum is evaluated, x will always be 1; the code block is equivalent to {1 + y}. If this is intended, x should not be passed into the local scope of sum.
-
-If you want to use a new version of a static code block every time a dynamic code block is run, prefix it with two dollar symbol characters.
 
 a static block that links into another code block will clear its scope other than the items that file into the second block; the second block will simply take over its old scope.
 
