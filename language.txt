@@ -1,0 +1,152 @@
+code blocks
+
+A code block is a set of statements with its own unique scope:
+	{
+		x: 1;
+		y: 2;
+	};
+
+A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the first item declared in the scope will be returned. If no items are declared in the local scope, return none. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
+
+scope cascades from one nested block to the next. If a name is not found in the local scope, above scopes will be searched.
+
+variables are declared and defined in name:value syntax like an object in other languages:
+
+	x: 1;
+	y: 2;
+
+you may pass values into the local scope of a code block by linking them with a tilde character. Values not passed into the local scope will still be available as detailed above. 
+
+	{codeblock1}~{codeblock2} // codeblock2 now has local access to variables defined in codeblock1.
+
+For a code block to accept values into its local scope, it must declare vacancies. These are typed and named:
+
+	block: $(int x, int y){x + y};
+	
+Values will file from one code block to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
+
+the basic types are int, float, char, and null. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for an "add" method. The right operator will be passed into it. A similar situation exists for other built in behaviors.
+
+A code block must be terminated by a semicolon if it is the end of a line.
+
+all blocks can be loops and can be condition-controlled; define run conditions before and after block:
+
+	[pre-check]{code}[post-check]
+	
+the pre-check determines whether the code should be executed; the post-check determines whether it should be executed again. If the pre-check is omitted, it is assumed to be true; if the post-check is omitted, it will be assumed to be false. This allows an equivalent to if statements,
+
+	[i < 3]{some code};
+
+an equivalent to do loops,
+
+	{some code; i++}[i < 3];
+
+an equivalent to while loops,
+
+	[i < 3]{some code; i++}[true];
+	
+but no direct equivalent to for loops. Since a for loop is only shorthand for a while loop in most languages, it can be done in one line still:
+	
+	{0;}~(int i)[i < 3]{some code; i++};
+
+a code block that links from another scope depends on that scope's execution to execute.
+
+	[false]{1; 2}~$sum; // sum is unreachable.
+
+a "$" prefix defines code block as dynamic; the block is not evaluated immediately. It maintains a scope as long as its parent scope still exists. This means it can be saved and re-evaluated:
+
+	sum: $(int x, int y){ x + y };
+	
+It is saved as a pointer.
+	
+A code block without "$" prefix will "collapse" into its return value after failing to run and is called "static".
+
+Static code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if return is explicitly called.
+
+to create a static instance of a dynamic code block (essentially running it), prefix it with another "$". Think of the dollar symbols as cancelling each other out:
+	
+	// this is almost equivalent to a static code block, with some differences described later:
+	$${some code here;}; 
+	
+	// this saves the code block and then instantiates it.
+	sum: $(int x, int y){x+y};
+	$sum;
+	
+	// note: evaluating a static code block without linking values into its vacancies is valid and assumes the values to be null.
+
+a static code block prefixed with a "!" inside a dynamic code block will collapse into its value once the dynamic code block is evaluated:
+
+	x: 1;
+	y: 2;
+
+	sum: $(int x, int y){ !{x} + y };
+	
+In the above case, the "sum" code block (which behaves like a function) does not behave as one might expect upon looking at it. Because x is inside a static code block prefixed by "!" (called pseudo-static), it is evaluated once and never again, somewhat like a macro. when sum is evaluated, x will always be 1; the code block is equivalent to {1 + y}. If this is intended, x should not be passed into the local scope of sum.
+
+If you want to use a new version of a static code block every time a dynamic code block is run, prefix it with two dollar symbol characters.
+
+a static block that links into another code block will clear its scope other than the items that file into the second block; the second block will simply take over its old scope.
+
+If a constant is alone on a line (like {0;}), it is unnamed but still added to the local scope. Since items are linked into another scope by index and not by name, you can declare a code block without names and pass it as arguments to a function:
+
+	{0; 2;}~$sum;
+
+dynamic code blocks' local scope can be accessed from outside by either name or index. To access a named value in a code block, use a ".":
+
+	data: ${
+		x: 1;
+		y: 2;
+		char: 'a';
+	};
+	data.x++;
+	
+to access by index, use a "@":
+
+	data: ${1; 2; 3;};
+	data@0: data@0 + 1;
+	
+Arrays can be emulated using a code block and indexing, as seen above. Another example:
+
+	string: {'h'; 'e'; 'l'; 'l'; 'o'; ' '; 'w'; 'o'; 'r'; 'l'; 'd'; '\0';}; // typing a string in quotes is shorthand for a dynamic code block with its characters as members. This could have also been {string: "hello world"}.
+	{0}~(int i)[i < {string;}~$length]{
+		[string@i = ' ']{
+			string@i: '_';
+		};
+	};
+	
+	//pseudocode for above:
+	for character in string:
+		if character is a space:
+			set character to an underscore
+	
+as a funny coincidence, most emails are valid syntax:
+
+	foo: ${${bar: 0;};};
+	bar: 0;
+	foo@bar.com: 1;
+
+Equality is checked using any number of equal signs. {x = y} is just as valid as {x == y}, and even {x ============== y}. Like your habit? you can keep it.
+
+Here is the fully featured dynamic code block syntax:
+
+	$(args)[check-before]{codeblock}[check-after]
+	
+static code block:
+	
+	(args)[check-before]{codeblock}[check-after]
+	
+pseudostatic code block:
+	!(args)[check-before]{codeblock}[check-after]
+
+Some example code
+==================================================
+
+sum: $int, int{
+	x + y
+};
+
+amount: {x:1, y:2}~$sum;
+
+
+{0;}~{i++;}[i < amount];
+
