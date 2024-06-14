@@ -34,7 +34,7 @@ For a code block to accept values into its local scope, it must declare vacancie
 
 	block: $(int x, int y){x + y};
 	
-Values will file from one code block to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
+Values will file from one the top of scope for code block to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
 
 the basic types are int, float, char, ptr, and null. Types are inferred on delcaration. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for a dynamic block named "add". The right operator will be passed into it. A similar situation exists for other built in behaviors.
 
