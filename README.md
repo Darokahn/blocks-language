@@ -12,8 +12,3 @@ keywords are of course necessary, but they also invoke the feeling that the lang
 The language will include a directive to execute lines of another language. For the toy interpreter, this will be python. For the serious compiler, this will be asm. In the interpreter, this will make it easy to implement code blocks that print text and get input, since on the backend it will just use python code. In the compiler, this will make it possible to do things that aren't possible in the scope of the language as-is.
 
 The interpreter will be a prototype of the language to prove that it works logically and get it to actually do some cool things. The interpreter will not really obey one of blocks' philosophies; that all code should be possible with vanilla blocks. Instead, it will prioritize implementing functionality and potentially locking implementations behind black boxes. I expect it to run tremendously slowly.
-
-# todo
--dump keyword
--chaining
--self keyword
