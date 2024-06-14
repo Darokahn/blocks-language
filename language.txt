@@ -9,6 +9,14 @@ A code block is a set of statements with its own unique scope:
 
 A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
 
+the dreturn keyword can be used to defer a return until execution of a block stops. Precedence order for the three methods of return is: explicit return statement; dreturn statement; final line without semicolon. If a dreturn is used but the final line has no semicolon, there will be a warning on compilation.
+
+	{
+		x: 1;
+		dreturn x;
+		// some condition that modifies x
+	}
+
 scope cascades from one nested block to the next. If a name is not found in the local scope, above scopes will be searched.
 
 variables are declared and defined in name:value syntax like an object in other languages:
@@ -28,7 +36,7 @@ For a code block to accept values into its local scope, it must declare vacancie
 	
 Values will file from one code block to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
 
-the basic types are int, float, char, and null. Types are inferred on delcaration. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for an "add" method. The right operator will be passed into it. A similar situation exists for other built in behaviors.
+the basic types are int, float, char, ptr, and null. Types are inferred on delcaration. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for a dynamic block named "add". The right operator will be passed into it. A similar situation exists for other built in behaviors.
 
 If outside of a vacancy declaration for a code block, any type name (as well as common declaration keywords such as 'let', 'var' and 'const') will be ignored by the compiler. These can be included for readabliity.
 
@@ -121,7 +129,7 @@ unterminated code blocks' local scope can be accessed from outside by either nam
 to access by index, use a "@":
 
 	data: *{1; 2; 3;};
-	data@0: data@0 + 1;
+	data@0: data@0 + 1; // @ operator takes precedence
 	
 Arrays can be emulated using a code block and indexing, as seen above. Another example:
 
@@ -179,10 +187,6 @@ when used on an assignment line, the token "it" may be used to refer to the valu
 	
 	x++;
 	
-'it' is short for 'itself', which may also be used.
-
-	x: itself + 1;
-	
 this is a typing convenience for when a long or complicated name is used in the calculation for changing its own value. It is particularly convenient in instances like:
 
 	this: *{ 
@@ -195,29 +199,6 @@ this is a typing convenience for when a long or complicated name is used in the 
 	nested: 0;
 	
 	this.variable.is@nested: it + 5;
-	
-'parent' is an alias for a pointer to the code block that a block is nested in. parent is baked into a dynamic code block on definition, so it will refer to the scope it was defined in rather than the scope it is evaluated in.
-
-	object: *{
-		member: 100;
-		
-		method: ${
-			parent.member = it - 1;
-		};
-	
-	}
-	
-	$object.method // object.member will decrement.
-	
-as 'it' refers to the variable being defined at the beginning of a line, a 'that' token refers to the most recently assigned variable. after (and only after) a line defining a value, 'that' can be used to refer to the same value. 'it' expires after the line terminates and will raise a syntax error if used on a non-assignment line. However, 'that' can be used on any line after it in the same scope. 'that' is redefined any time a variable is assigned, and it never leaves its local scope. 'that' should ONLY be used sparingly, and very close to the line that defines it.
-
-	{
-		x: 100;
-		y: that + 10; // 'that' refers to x
-		z: that + 10; // 'that' refers to y
-		that: 100; // 'that' refers to z; z is re-assigned.
-		
-	}
 
 Here is the fully featured dynamic code block syntax:
 
@@ -243,4 +224,7 @@ amount: {x:1, y:2}~$sum;
 
 
 {0;}~{i++;}[i < amount];
+
+
+// more in example.bl
 
