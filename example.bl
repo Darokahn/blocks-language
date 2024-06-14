@@ -3,7 +3,7 @@
     false: 0;
 
     hasChar: (ptr string, char ch){
-        len: {str}~$length;
+        len: {string}~$length;
         for {0}~(int i)[i < len]{
             thisChar: string@i;
             if [thisChar = ch]{
