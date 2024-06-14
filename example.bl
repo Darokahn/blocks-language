@@ -16,7 +16,7 @@
 
     main: ${
         string: "hello world"; // string literals evaluate to unterminated code blocks
-        if [{string; 'w';}~$hasChar]{
+        if [{string, 'w',}~$hasChar]{
             {string}~$print;
         };
     };
