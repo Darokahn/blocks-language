@@ -36,11 +36,27 @@ For a code block to accept values into its local scope, it must declare vacancie
 	
 Values will file from one the top of scope for code block to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
 
-the basic types are int, float, char, ptr, and null. Types are inferred on delcaration. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for a dynamic block named "add". The right operator will be passed into it. A similar situation exists for other built in behaviors.
+The basic types are int, float, char, ptr, and null. Types are inferred on declaration. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for a dynamic block named "add". The right operator will be passed into it. A similar situation exists for other built in behaviors.
 
 If outside of a vacancy declaration for a code block, any type name (as well as common declaration keywords such as 'let', 'var' and 'const') will be ignored by the compiler. These can be included for readabliity.
 
 A code block must be terminated by a semicolon if it is the end of a line.
+
+Common symbols for logical operators are used: and -> &&; or -> ||; not -> !;
+However, many bitwise operators' symbols are reserved for specific purposes. Even if a bitwise operator's common symbol is unused for any other purpose, a bitwise operator should always be affixed with '^'.
+
+	^|  -> bitwise or;
+	^&  -> bitwise and;
+	^<< -> bitwise shift left;
+	^>> -> bitwise shift right;
+	^~  -> bitwise not;
+	^^  -> bitwise xor;
+	
+the '^' can go before, after, or bookended.
+
+if a common symbol for a binary operator is NOT used, such as the & symbol by itself, the compiler will interpret it as a valid binary operator. However, to avoid an arbitrary difference between operator symbols that do and don't have a purpose in syntax, "^" should always be used.
+
+There is an argument for shift operations not conforming to this convention, as they are already two characters and are therefore set apart from the other operators. Additionally, having to prepend/append a character may confuse the directional nature of shift operators. This will be left to the taste of the user, since affixing or not affixing is an arbitrary decision that does not affect how the code runs. I suspect any groups that use this language will come to a consensus for a standard.
 
 all blocks can be loops and can be condition-controlled; define run conditions before and after block:
 
@@ -93,14 +109,14 @@ to create a static instance of a dynamic code block (essentially running it), pr
 	
 	// note: evaluating a static code block without linking values into its vacancies is valid and assumes the values to be null.
 
-a static code block prefixed with a "!" inside a dynamic code block will collapse into its value once the dynamic code block is evaluated:
+a static code block prefixed with a "?" inside a dynamic code block will collapse into its value once the dynamic code block is evaluated:
 
 	x: 1;
 	y: 2;
 
-	sum: $(int x, int y){ !{x} + y };
+	sum: $(int x, int y){ ?{x} + y };
 	
-In the above case, the "sum" code block (which behaves like a function) does not behave as one might expect upon looking at it. Because x is inside a static code block prefixed by "!" (called pseudo-static), it is evaluated once and never again, somewhat like a macro. when sum is evaluated, x will always be 1; the code block is equivalent to {1 + y}. If this is intended, x should not be passed into the local scope of sum.
+In the above case, the "sum" code block (which behaves like a function) does not behave as one might expect upon looking at it. Because x is inside a static code block prefixed by "?" (called pseudo-static), it is evaluated once and never again, somewhat like a macro. when sum is evaluated, x will always be 1; the code block is equivalent to {1 + y}. If this is intended, x should not be passed into the local scope of sum.
 
 a static block that links into another code block will clear its scope other than the items that file into the second block; the second block will simply take over its old scope.
 
@@ -170,7 +186,7 @@ a "pseudostatic" code block is evaluated in macro-like fashion inside a dynamic 
 
 	x: 1;
 	y: $random; // assume a random function exists
-	block: $(int x){!{y} + x};
+	block: $(int x){?{y} + x};
 	
 
 Equality is checked using any number of equal signs. {x = y} is just as valid as {x == y}, and even {x ============== y}.
@@ -227,4 +243,7 @@ amount: {x:1, y:2}~$sum;
 
 
 // more in example.bl
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
