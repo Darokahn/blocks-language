@@ -16,3 +16,4 @@ The interpreter will be a prototype of the language to prove that it works logic
 # todo
 -dump keyword
 -chaining
+-self keyword
