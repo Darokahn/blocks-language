@@ -5,6 +5,7 @@ A code block is a set of statements with its own unique scope:
 	{
 		x: 1;
 		y: 2;
+		return x;
 	};
 
 A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
@@ -25,6 +26,14 @@ variables are declared and defined in name:value syntax like an object in other 
 	y: 2;
 	
 This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," and {x = 1} should be read as "x equals one."
+
+In most cases, a comma is equivalent to a semicolon. There is a difference between the two that will be discussed further down.
+
+	{
+		x: 20,
+		y: 100,
+		z: x + y;
+	}
 
 you may pass values into the local scope of a code block by linking them with a tilde character. Values not passed into the local scope will still be available as detailed above. 
 
@@ -84,11 +93,17 @@ tokens 'if', 'while', 'do', 'for', and the generic 'condition' will be ignored b
 		some code;
 	}
 
+to implement an 'else' case, use chaining. Chain two code blocks by using a '|' char between them:
+
+	[pre-check]{codeblock1} | {codeblock2};
+
+if the pre-check of a block fails the *first* time it runs, the next block in the chain will run. However, if any block pre-check in the chain succeeds, the rest will be passed over.
+
 a code block that links from another scope depends on that scope's execution to execute.
 
-	[false]{1; 2}~$sum; // sum is unreachable.
+	[false]{1, 2,}~$sum; // sum is unreachable.
 
-a "$" prefix defines code block as dynamic; the block is not evaluated immediately. It maintains a scope as long as its parent scope still exists. This means it can be saved and re-evaluated:
+a "$" prefix defines a code block as dynamic; the block is not evaluated immediately. It maintains a scope as long as its parent scope still exists. This means it can be saved and re-evaluated:
 
 	sum: $(int x, int y){ x + y };
 	
@@ -120,15 +135,15 @@ In the above case, the "sum" code block (which behaves like a function) does not
 
 a static block that links into another code block will clear its scope other than the items that file into the second block; the second block will simply take over its old scope.
 
-If a constant is alone on a line (like {0;}), it is unnamed but still added to the local scope. Since items are linked into another scope by index and not by name, you can declare a code block without names and pass it into another block:
+If a constant is alone on a line that it is terminated by a comma (like {0,}), it is unnamed but still added to the local scope. Since items are linked into another scope by index and not by name, you can declare a code block without names and pass it into another block:
 
-	{0; 2;}~$sum;
+	{0, 2,}~$sum;
 	
 A final type of code block is "unterminated". if a code block does not return anything (either explicitly with return; or implicitly with a final line without a semicolon), it will be unterminated. Unterminated code blocks return a pointer to their active scope.
 
 	items: {
-		x: 1;
-		y: 2;	
+		x: 1,
+		y: 2,
 	}
 	
 if a code block is intended to be unterminated, it can be prefixed with a "*" char. code blocks that do not terminate but have no "*" prefix will produce a warning upon compilation. 
@@ -144,12 +159,12 @@ unterminated code blocks' local scope can be accessed from outside by either nam
 	
 to access by index, use a "@":
 
-	data: *{1; 2; 3;};
+	data: *{1, 2, 3,};
 	data@0: data@0 + 1; // @ operator takes precedence
 	
 Arrays can be emulated using a code block and indexing, as seen above. Another example:
 
-	string: *{'h'; 'e'; 'l'; 'l'; 'o'; ' '; 'w'; 'o'; 'r'; 'l'; 'd'; '\0';}; // typing a string in quotes is shorthand for an unterminated code block with its characters as members. This could have also been {string: "hello world"}.
+	string: *{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\0',}; // typing a string in quotes is shorthand for an unterminated code block with its characters as members. This could have also been {string: "hello world"}.
 	for {0}~(int i)[i < {string;}~$length] { // assume length is a code block
 		if [string@i = ' ']{
 			string@i: '_';
@@ -163,7 +178,7 @@ Arrays can be emulated using a code block and indexing, as seen above. Another e
 	
 as a funny coincidence, most emails are valid syntax:
 
-	foo: *{*{bar: 0;};};
+	foo: *{*{bar: 0;},};
 	bar: 0;
 	foo@bar.com: 1;
 
@@ -179,7 +194,7 @@ A "dynamic" code block is not evaluated, and is stored as a pointer to its code:
 	
 An "unterminated" code block is evaluated, but its scope is not destroyed and it returns a pointer to its final state:
 
-	array: *{1; 2; 3;};
+	array: *{1, 2, 3,};
 	object: *{x: 2; y: 3;};
 	
 a "pseudostatic" code block is evaluated in macro-like fashion inside a dynamic code block. When a dynamic code block is defined, any pseudostatic blocks inside will be "baked" into the block permanently as what they evaluate to:
@@ -187,6 +202,55 @@ a "pseudostatic" code block is evaluated in macro-like fashion inside a dynamic 
 	x: 1;
 	y: $random; // assume a random function exists
 	block: $(int x){?{y} + x};
+
+the 'dump' keyword can be used to dump a variable from the child scope into the parent scope.
+
+	{
+		x: 1;
+		{
+			y: x + 2;
+			dump y;
+		};
+		{y}~$print;
+	};
+
+this can be used to initialize arrays:
+
+	array: {
+		for {0,}(int i)[i < 9]{
+			dump {i};
+		}[true];
+	};
+
+the 'this' keyword is a pointer to the currrent scope. This means it cannot be used quite like in other languages like javascript:
+
+	object: {
+		x: 1;
+		method: ${
+			this.x + 1 // incorrect usage of 'this', the scope of the dynamic code block will be searched for 'x' and will cause an error.
+			};
+	};
+
+in other languages, 'this' refers to the object a method is being called on so that the method can be used to modify and access object variables.
+In blocks, 'this' is a reference to the start of the current scope. It has to be used in a special way:
+
+	object: {
+		x: 1;
+		method: ${
+			?{this}.x + 1 // perfect! In this case, since 'this' is used in a pseudostatic block, it is baked into the method as a pointer to 'object'.
+		};
+	};
+
+To use 'this' as one would in javascript or C++, you must use a pseudostatic code block to bake a pointer to the parent object into the method.
+
+A full list of keywords is: {
+	dump,
+	return,
+	dreturn,
+	break,
+	it,
+	this
+}
 	
 
 Equality is checked using any number of equal signs. {x = y} is just as valid as {x == y}, and even {x ============== y}.
@@ -212,7 +276,7 @@ this is a typing convenience for when a long or complicated name is used in the 
 	this: *{ 
 		variable: *{ 
 			is: *{
-				0;
+				0,
 			};
 		};
 	};
@@ -243,11 +307,7 @@ sum: $int, int{
 amount: {x:1, y:2}~$sum;
 
 
-{0;}~{i++;}[i < amount];
+{0,}~{i++;}[i < amount];
 
 
 // more in example.bl
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
