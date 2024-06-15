@@ -25,7 +25,7 @@ variables are declared and defined in name:value syntax like an object in other 
 	x: 1;
 	y: 2;
 	
-This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," and {x = 1} should be read as "x equals one."
+This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," or "set x to one," and {x = 1} should be read as "x equals one"
 
 In most cases, a comma is equivalent to a semicolon. There is a difference between the two that will be discussed further down.
 
