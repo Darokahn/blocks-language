@@ -1,13 +1,13 @@
-code blocks
+# Code Blocks
 
 A code block is a set of statements with its own unique scope:
-
+```
 	{
 		x: 1;
 		y: 2;
 		return x;
 	};
-
+```
 A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
 
 the dreturn keyword can be used to defer a return until execution of a block stops. Precedence order for the three methods of return is: explicit return statement; dreturn statement; final line without semicolon. If a dreturn is used but the final line has no semicolon, there will be a warning on compilation.
@@ -299,7 +299,7 @@ pseudostatic code block:
 
 Some example code
 ==================================================
-
+```
 sum: $int, int{
 	x + y
 };
@@ -309,5 +309,5 @@ amount: {x:1, y:2}~$sum;
 
 {0,}~{i++;}[i < amount];
 
-
+```
 // more in example.bl
