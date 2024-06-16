@@ -1,13 +1,13 @@
-code blocks
+# Code Blocks
 
 A code block is a set of statements with its own unique scope:
-
+```
 	{
 		x: 1;
 		y: 2;
 		return x;
 	};
-
+```
 A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
 
 the dreturn keyword can be used to defer a return until execution of a block stops. Precedence order for the three methods of return is: explicit return statement; dreturn statement; final line without semicolon. If a dreturn is used but the final line has no semicolon, there will be a warning on compilation.
@@ -25,7 +25,7 @@ variables are declared and defined in name:value syntax like an object in other 
 	x: 1;
 	y: 2;
 	
-This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," and {x = 1} should be read as "x equals one."
+This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," or "set x to one," and {x = 1} should be read as "x equals one"
 
 In most cases, a comma is equivalent to a semicolon. There is a difference between the two that will be discussed further down.
 
@@ -43,7 +43,7 @@ For a code block to accept values into its local scope, it must declare vacancie
 
 	block: $(int x, int y){x + y};
 	
-Values will file from one the top of scope for code block to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
+Values will file from the top of one code block's scope to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
 
 The basic types are int, float, char, ptr, and null. Types are inferred on declaration. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for a dynamic block named "add". The right operator will be passed into it. A similar situation exists for other built in behaviors.
 
@@ -299,7 +299,7 @@ pseudostatic code block:
 
 Some example code
 ==================================================
-
+```
 sum: $int, int{
 	x + y
 };
@@ -309,5 +309,5 @@ amount: {x:1, y:2}~$sum;
 
 {0,}~{i++;}[i < amount];
 
-
+```
 // more in example.bl
