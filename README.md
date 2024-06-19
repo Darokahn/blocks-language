@@ -14,3 +14,15 @@ The language will include a directive to execute lines of another language. For 
 The interpreter will be a prototype of the language to prove that it works logically and get it to actually do some cool things. The interpreter will not really obey one of blocks' philosophies; that all code should be possible with vanilla blocks. Instead, it will prioritize implementing functionality and potentially locking implementations behind black boxes. I expect it to run tremendously slowly.
 
 Language docs can be viewed [here](https://github.com/angel-721/blocks-language/blob/update-language-docs/language.md).
+
+# ZEN (WIP)
+Black boxes are useful.
+Black boxes are boring.
+It should be possible without one.
+Words are useful.
+Words are boring.
+It should be possible without them.
+A function is:
+an implementation made from native language code, or
+an implementation made from assembly code.
+Anything else is an extension.
