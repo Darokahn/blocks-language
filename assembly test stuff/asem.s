@@ -1,66 +1,79 @@
-format ELF64 executable 3
-
-segment readable executable
-
-entry $
-    mov rax, 233
+global _start
+.text:
+_start:
+    push 42
     call uitoa
+    return:
     call print
+    call end
+    
+
+end:
+    mov ebx, [esp+4]
+    ; before operation: push exit code
+    mov eax, 1
+    int 0x80
 
 print:
-    mov rax, 1
-    mov rdi, 1
-
-    lea rsi, [forw]
-    mov rdx, 3
-    syscall
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, msg
+    mov edx, len
+    int 0x80
     ret
-
-exit:
-    mov rax, 60
-    mov rdi, 0
-    syscall
 
 uitoa:
-    mov r9, rax
-    mov r15, 0 ; digit found bool
-    mov r8, 0 ; digit counter
-    mov rdx, 10000000000 ; max 10s
-    call uitoa_loop
+    ; +4: num
+    ; -4: digits
+    ; -8: comp
+    ; -12: has_found_digit
+    mov ebp, esp
+    push msg
+    push 1000000
+    push 0
 
-uitoa_loop:
-    call print
-    cmp r9, rdx
-    jl divi
-    mov r15, 1
-    sub r9, rdx
-    add byte [rev], 1
+    mov eax, [ebp + 4]
+    cmp eax, [ebp-8]
 
-    divi:
-        mov rdx, rax
-        xor rdx, rdx
-        mov rcx, 10
-        div rcx
-        mov rax, rdx
-        cmp r15, 1
-        jl add_digit
-        jmp uitoa_loop
+    jl divide_comp
+    jmp else
+        divide_comp:
+            mov eax, [ebp-8]
+            mov esi, 10
+            div esi
+            mov [ebp-8], eax
+        increment_digit:
+            add eax, 1
+            mov byte [eax], 48
+        jmp then
 
-        add_digit:
-            inc r8
-            call migrate_buffer
-            jmp uitoa_loop
+    else:
 
-migrate_buffer:
-    ret
+        jge subtract_comp
+            subtract_comp:
+                sub eax, ecx
+
+        jge increment_val
+            increment_val:
+            add byte [eax], 1
+    
+    then:
+        cmp ebp, 0
+        jle return
+
+        jmp uitoa
+
+    ;if num < comp:
+    ;    goto divide code
+    ;    if has_found_digit:
+    ;        goto increment digit code
+    ;else:
+    ;   sub comp from num
+    ;   increment value at current place
+    ;if num:
+    ;    restart
 
 
-segment readable writable
-
-rev:
-    dd 10
-    rb 80
-forw:
-    dd 48
-    dd 10
-    rb 80
+.data:
+msg resb 80
+len equ $ - msg
