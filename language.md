@@ -18,6 +18,8 @@ the dreturn keyword can be used to defer a return until execution of a block sto
 		// some condition that modifies x
 	}
 
+if async behavior is added, dreturn can be used to return a pointer to a value. As the code block executes asynchronously, subsequent code will always point to that particular value.
+
 scope cascades from one nested block to the next. If a name is not found in the local scope, above scopes will be searched.
 
 variables are declared and defined in name:value syntax like an object in other languages:
@@ -71,7 +73,7 @@ all blocks can be loops and can be condition-controlled; define run conditions b
 
 	[pre-check]{code}[post-check]
 	
-the pre-check determines whether the code should be executed; the post-check determines whether it should be executed again. If the pre-check is omitted, it is assumed to be true; if the post-check is omitted, it will be assumed to be false. A successful post-check will always run the pre-check as well. This allows an equivalent to if statements,
+the pre-check determines whether the code should be executed; the post-check determines whether it should be executed again. If the pre-check is omitted, it is assumed to be true; if the post-check is omitted, it will be assumed to be false. A successful post-check will always run the pre-check again. This allows an equivalent to if statements,
 
 	[i < 3]{some code}; // post-check is assumed to be false
 
@@ -181,6 +183,8 @@ as a funny coincidence, most emails are valid syntax:
 	foo: *{*{bar: 0;},};
 	bar: 0;
 	foo@bar.com: 1;
+
+evaluated code blocks can be indexed into as well. Indexing a code block by either name or number will override all return statements and return the specified value. There 
 
 to review, there are 4 different types of code block:
 
