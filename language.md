@@ -271,7 +271,7 @@ when used on an assignment line, the token "it" may be used to refer to the valu
 	
 	x++;
 
-'it' is short for 'itself', which may also be used.
+'it' is short for 'itself', which may also be used. 'itself' may feel more natural, but it also may conflict conceptually with the common 'self' keyword in other languages.
 
 	x: itself + 1;
 	
