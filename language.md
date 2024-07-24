@@ -1,14 +1,18 @@
 # Code Blocks
 
+*note: examples are not restricted by only using syntax that has been described prior in the document. In its current state, the document is in need of a re-organization, as concepts aren't introduced in a very good order.*
+
 A code block is a set of statements with its own unique scope:
 ```
 	{
 		x: 1;
 		y: 2;
 		return x;
-	};
+	}
 ```
 A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
+
+Anywhere a code block is appropriate, a single expression is also appropriate. Expressions 
 
 the dreturn keyword can be used to defer a return until execution of a block stops. Precedence order for the three methods of return is: explicit return statement; dreturn statement; final line without semicolon. If a dreturn is used but the final line has no semicolon, there will be a warning on compilation.
 
@@ -17,8 +21,6 @@ the dreturn keyword can be used to defer a return until execution of a block sto
 		dreturn x;
 		// some condition that modifies x
 	}
-
-if async behavior is added, dreturn can be used to return a pointer to a value. As the code block executes asynchronously, subsequent code will always point to that particular value.
 
 scope cascades from one nested block to the next. If a name is not found in the local scope, above scopes will be searched.
 
@@ -87,21 +89,26 @@ an equivalent to while loops,
 	
 but no direct equivalent to for loops. Since a for loop is only shorthand for a while loop in most languages, it can be done in one line still:
 	
-	{0;}~(int i)[i < 3]{some code; i++}[true];
-
+	{
+ 		i: 0;
+ 		{[i < 3]{some code; i++}[true];
+	}
+ 
 tokens 'if', 'while', 'do', 'for', and the generic 'condition' will be ignored by the compiler and may be included for readability. This means they are not valid names.
 
 	if [i < 3]{
-		some code;
+		// some code
 	}
 
-to implement an 'else' case, use chaining. Chain two code blocks by using a '|' char between them:
+to implement an 'else' case, use chaining. Chain two code blocks by using a '|' between them:
 
-	[pre-check]{codeblock1} | {codeblock2};
+	[pre-check]{codeblock1} | [pre-check]{codeblock2} | {codeblock2};
 
 if the pre-check of a block fails the *first* time it runs, the next block in the chain will run. However, if any block pre-check in the chain succeeds, the rest will be passed over.
 
-a code block that links from another scope depends on that scope's execution to execute.
+If a block or each block in a chain of blocks fails its first pre-check, it evaluates to false.
+
+a code block that links from another block's scope depends on that block's execution to execute.
 
 	[false]{1, 2,}~$sum; // sum is unreachable.
 
@@ -115,7 +122,7 @@ A code block without "$" prefix will "collapse" into its return value after fail
 
 Static code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if return is explicitly called.
 
-to create a static instance of a dynamic code block (essentially running it), prefix it with another "$". Think of the dollar symbols as canceling each other out:
+to create a static instance of a dynamic code block (thereby running it), prefix it with another "$". Think of the dollar symbols as canceling each other out:
 	
 	// this is equivalent to a static code block:
 	$${some code here;}; 
@@ -126,7 +133,7 @@ to create a static instance of a dynamic code block (essentially running it), pr
 	
 	// note: evaluating a static code block without linking values into its vacancies is valid and assumes the values to be null.
 
-a static code block prefixed with a "?" inside a dynamic code block will collapse into its value once the dynamic code block is evaluated:
+a static code block prefixed with a "?" inside a dynamic code block will be captured as its value once the dynamic code block is evaluated:
 
 	x: 1;
 	y: 2;
@@ -134,8 +141,6 @@ a static code block prefixed with a "?" inside a dynamic code block will collaps
 	sum: $(int x, int y){ ?{x} + y };
 	
 In the above case, the "sum" code block (which behaves like a function) does not behave as one might expect upon looking at it. Because x is inside a static code block prefixed by "?" (called pseudo-static), it is evaluated once and never again, somewhat like a macro. when sum is evaluated, x will always be 1; the code block is equivalent to {1 + y}. If this is intended, x should not be passed into the local scope of sum.
-
-a static block that links into another code block will clear its scope other than the items that file into the second block; the second block will simply take over its old scope.
 
 If a constant is alone on a line that it is terminated by a comma (like {0,}), it is unnamed but still added to the local scope. Since items are linked into another scope by index and not by name, you can declare a code block without names and pass it into another block:
 
@@ -148,7 +153,7 @@ A final type of code block is "unterminated". if a code block does not return an
 		y: 2,
 	}
 	
-if a code block is intended to be unterminated, it can be prefixed with a "*" char. code blocks that do not terminate but have no "*" prefix will produce a warning upon compilation. 
+if a code block is intended to be unterminated, it can be prefixed with a "\*" char. code blocks that do not terminate but have no "\*" prefix will produce a warning upon compilation. 
 
 unterminated code blocks' local scope can be accessed from outside by either name or index. To access a named value in a code block, use a ".":
 
@@ -207,7 +212,7 @@ a "pseudostatic" code block is evaluated in macro-like fashion inside a dynamic 
 	y: $random; // assume a random function exists
 	block: $(int x){?{y} + x};
 
-the 'dump' keyword can be used to dump a variable from the child scope into the parent scope.
+the 'dump' keyword can be used to move a variable from the child scope into the parent scope. To dump it with its current name, use a semicolon. To dump it unnamed, use a comma.
 
 	{
 		x: 1;
@@ -221,27 +226,76 @@ the 'dump' keyword can be used to dump a variable from the child scope into the 
 this can be used to initialize arrays:
 
 	array: {
-		for {0,}(int i)[i < 9]{
-			dump {i};
+ 		i: 0;
+		for [i < 9]{
+			dump i,
+   			i: it+1;
 		}[true];
 	};
 
-the 'this' keyword is a pointer to the currrent scope. This means it cannot be used quite like in other languages like javascript:
+additionally, you can use the syntax `dump name: value` to dump a value with any name into the parent scope.
+a named dump will overwrite any variables with the same name in the parent scope.
 
-	object: {
+a `dump;` on its own will dump the entire local scope into the parent scope. It's probably a bad idea to do that in most cases, but hey, I'm not your boss.
+
+in languages that often use anonymous function callbacks for simple tasks such as javascript, `return`ing the right value from the right scope can be tricky. For example:
+
+	// javascript code
+ 	function hasB(list) {
+  		list.forEach(function(item) {
+   			if (item === "b") {
+     				return true;
+			}
+		})
+	}
+ 
+In this example, returning true will only return out of the forEach callback; the main hasB function won't return. There are plenty of simple alternatives, but it can be frustrating to start with a `.forEach()` and then realize you have to replace it with another type of for loop or use a flag variable because you want to return something.
+
+Additionally, since conditionals have their own scope from which to return in `blocks`, returning can be a little obtuse:
+
+ 	{
+		length: $(ptr string){
+  			i: 0;
+	 		{
+				lengthFound: list@i == '\0'; // keep in mind, a code block that fails its first pre-check evaluates to false	
+				dump lengthFound;
+				dump i: it + 1;
+			}[!lengthFound]
+   			
+   			return i - 1;
+		}
+  	}
+
+luckily, `blocks` has a solution to these problems. If a function has defined a deferred return, you can use a special syntax to execute that return in that scope with a specific value:
+
+	{
+ 		length: $(ptr string){
+   			l: 0;
+	  		dreturn l;
+	 		{
+				[string@l == '\0']{return l: l}
+			}[true]
+		}
+	}
+
+if a `return` has the syntax `return name: value`, it will search starting in its local scope and moving up until it finds a dreturn that expects the same name. Then, that scope and all its child scopes will be destroyed and the parent block will return the proper value.
+
+the 'this' keyword is a pointer to the current scope. It can be used to search for a variable, but raise an error if it doesn't exist locally rather than checking upper scopes. This means it cannot be used quite like in other languages like javascript:
+
+	object: *{
 		x: 1;
 		method: ${
-			this.x + 1 // incorrect usage of 'this', the scope of the dynamic code block will be searched for 'x' and will cause an error.
+			this.x + 1 // incorrect usage of 'this'; the scope of the dynamic code block will be searched for 'x' and will cause an error.
 			};
 	};
 
 in other languages, 'this' refers to the object a method is being called on so that the method can be used to modify and access object variables.
 In blocks, 'this' is a reference to the start of the current scope. It has to be used in a special way:
 
-	object: {
+	object: *{
 		x: 1;
 		method: ${
-			?{this}.x + 1 // perfect! In this case, since 'this' is used in a pseudostatic block, it is baked into the method as a pointer to 'object'.
+			?{this}.x + 1 // perfect! In this case, since 'this' is used in a pseudostatic block, it is captured as a pointer to 'object'.
 		};
 	};
 
@@ -290,9 +344,9 @@ this is a typing convenience for when a long or complicated name is used in the 
 
 Here is the fully featured dynamic code block syntax:
 
-	$(args)[check-before]{codeblock}[check-after]
-	
-others follow the same syntax, but with a different or omitted signature character at the beginning.
+	$(args){codeblock}
+
+Note that prechecks and postchecks are not included.
 	
 static code block:
 	
@@ -301,7 +355,9 @@ static code block:
 pseudostatic code block:
 	?(args)[check-before]{codeblock}[check-after]
 
-Some example code
+The blocks language will not prioritize having built-in code blocks to perform operations like i/o access. As per the language's philosophy, there should be zero functionality that *requires* engaging with a black box. Don't get me wrong—the compiler will place standard code blocks like `print`, `readfile`, etc. into the scope of your program if you choose to include them, but the source code for these functions will be stored locally and easily viewed/modified.
+
+# Some example code
 ==================================================
 ```
 sum: $int, int{
