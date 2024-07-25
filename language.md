@@ -95,21 +95,21 @@ The right hand term must be either an `unterminated` code block or a `dynamic` c
 
 In cases where the right hand term is `unterminated`:
 * In cases where the left hand term is a primitive type:
-    The `unterminated` block will check if it has space for a new value in its allocated memory region. If not, it will copy itself to a new region of memory with space for the new value and append it.
+    * The `unterminated` block will check if it has space for a new value in its allocated memory region. If not, it will copy itself to a new region of memory with space for the new value and append it.
 * In cases where the left hand term is also a pointer to an `unterminated` block:
-    First, the left hand operator will be searched for a `__link__` member. If it's found, the join operation will be tried on what it returns. If not, the same process will occur as with primitives, but each item in the left hand term's scope will be copied after space is checked.
+    * First, the left hand operator will be searched for a `__link__` member. If it's found, the join operation will be tried on what it returns. If not, the same process will occur as with primitives, but each item in the left hand term's scope will be copied after space is checked.
 * In cases where the left hand term is a pointer to a `dynamic` block:
-    *I am not decided on this one yet. Either it will cause an error, or it will be allowed, and the operators will be treated as switched. In other words, the `unterminated` block will be passed into the `dynamic` block.*
+    * *I am not decided on this one yet. Either it will cause an error, or it will be allowed, and the operators will be treated as switched. In other words, the `unterminated` block will be passed into the `dynamic` block.*
 * In cases where the left hand term is a `static` `scoped` block:
-    Linking has a higher order of operations than evaluating code blocks. First, the right hand side is evaluated, then the left side. However, the left operator in a Link operation cannot technically be `static`. If at any point it terminates, it will stop operation and be treated as an `unterminated` code block in the Link operation.
+    * Linking has a higher order of operations than evaluating code blocks. First, the right hand side is evaluated, then the left side. However, the left operator in a Link operation cannot technically be `static`. If at any point it terminates, it will stop operation and be treated as an `unterminated` code block in the Link operation.
 
 In cases where the right hand term is `dynamic`:
 * In cases where the left hand term is a primitive type:
-    If the dynamic code block has declared at least one vacancy, the primitive type will file into it unless there's a type mismatch. If the dynamic code block declares no vacancies or uses the wild card vacancy, a new scope is created, and the primitive type is set to be the first local unnamed value.
+    * If the dynamic code block has declared at least one vacancy, the primitive type will file into it unless there's a type mismatch. If the dynamic code block declares no vacancies or uses the wild card vacancy, a new scope is created, and the primitive type is set to be the first local unnamed value.
 * In cases where the left hand term is an `unterminated` code block:
-    If the `dynamic` block has a set number of vacancies, those vacancies will be filled. If it has no vacancies or uses the wild card, a new scope will be created, the `unterminated` block will be copied into it, and the `dynamic` block will begin its execution in that scope.
+    * If the `dynamic` block has a set number of vacancies, those vacancies will be filled. If it has no vacancies or uses the wild card, a new scope will be created, the `unterminated` block will be copied into it, and the `dynamic` block will begin its execution in that scope.
 * In cases where the left hand term is `static` `scoped`:
-   The same behavior will occur as when a `static` block is linked with an `unterminated`.
+   & The same behavior will occur as when a `static` block is linked with an `unterminated`.
 
 A local block can be used as the left hand side of a link operation, but it has no scope to speak of, so it will evaluate and link using whatever it returns.
 
