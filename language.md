@@ -190,7 +190,9 @@ A final type of code block is `unterminated`. if a code block does not return an
 		y: 2,
 	}
 	
-if a code block is intended to be `unterminated`, it can be prefixed with a `*` char. code blocks that do not terminate but have no `*` prefix will produce a warning upon compilation. 
+if a code block is intended to be `unterminated`, it can be prefixed with a `*` char. code blocks that do not terminate but have no `*` prefix will produce a warning upon compilation. Additionally, any returns will produce a warning.
+
+Since `this` is a pointer to the local scope, a `return this;` statement will also create an unterminated code block. This is a more intentional way of creating a static code block in case the `*` prefix and compilation warnings don't put you at ease.
 
 `unterminated` code blocks' local scope can be accessed from outside by either name or index. To access a named value in a code block, use a `.`:
 
