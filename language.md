@@ -2,25 +2,63 @@
 
 *note: examples are not restricted by only using syntax that has been described prior in the document. In its current state, the document is in need of a re-organization, as concepts aren't introduced in a very good order.*
 
-A code block is a set of statements with its own unique scope:
+A code block is a set of statements with its own unique scope, or a compound statement:
+
 ```
 	{
 		x: 1;
 		y: 2;
 		return x;
-	}
+	};
 ```
+
 A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
 
-Anywhere a code block is appropriate, a single expression is also appropriate. Expressions 
+Anywhere a statement is allowed, a code block is as well; and vice versa. Languages like C can accept a code block or a single statement interchangeably in some circumstances (for example, `if` statements). However, certain idioms like function definition do not allow this. `blocks`, however, has fully interchangeable statements and code blocks.
 
-the dreturn keyword can be used to defer a return until execution of a block stops. Precedence order for the three methods of return is: explicit return statement; dreturn statement; final line without semicolon. If a dreturn is used but the final line has no semicolon, there will be a warning on compilation.
+Here is a brief overview of code blocks and how they work:
+
+there are two main categories of code block:
+
+- `scoped`: a composite statement that has its own unique scope. Suitable for creating objects and reusing code. Uses curly braces.
+- `local`: a composite statement that executes in the parent scope. Suitable for conditional blocks. Uses parentheses.
+
+```
+	{
+	  // this creates its own scope and executes. More overhead, but more powerful.
+	};
+	
+	(
+	  // this stays in the local scope.
+	);
+```
+
+Along with these categories, there are a few types:
+
+- Both can be a `static` code block, a collection of statements that run in order right when you define them.
+- Both can be a `dynamic` code block, which is saved as a pointer to code and executed at any point in the program.
+
+`dynamic` code blocks provide an analog to functions in other languages. Since both `local` and `scoped` blocks can be `dynamic`, you can choose to create Reusable blocks of code that run with the scope they're called in. This is probably not good practice in most cases, but it can be powerful.
+
+`scoped` blocks have another feature. If they reach the end of their execution but don't return any values, they will be `unterminated` and return a pointer to their still-active scope. At that point, it becomes like an object and its local values become addressable data members.
+
+If async support is added to this language, blocks that may terminate but have not yet will also be addressable. This will allow you to define a code block that performs asynchronous calculations for the duration of the program, and access those variables as they change. This would be useful for getting input from peripherals or managing web sockets.
+
+A final "code block" type is `pseudostatic`. `pseudostatic` code blocks are not really code blocks, but they have a similar syntax. If a `pseudostatic` block is placed inside a `dynamic` block, the value it evaluates to will be captured when the dynamic block is created. When the block is instantiated and run later, that value will always be the same.
+
+You may notice that `local` code blocks seem to overwrite the syntax of enclosed expressions in other languages. This is because local code blocks are meant to be an extension of the concept of expressions, allowing them to have multiple statements and use `return` to define what they evaluate to. However, the expected functionality of expressions remains intact: `x: (x + 5);` still sets x to `(x + 5)`. When the final line of a code block lacks a semicolon, this line is implied to return the value of its expression. Therefore, when a `local` code block has only one statement, it behaves exactly like parentheses-enclosed expressions do in other languages. In fact, when a compiler is written, it will likely detect when a `local` block has only one expression and avoid the overhead of making it into a code block.
+
+*note: I'm still undecided whether pseudostatic blocks should be allowed to be contain several statements or just one expression. I can't see why you would want to run multiple statements inside a pseudostatic block, but I also don't see a great reason to take that freedom away from the user. Either way, users can force it to use multiple lines by nesting a code block inside it, so it doesn't matter much.*
+
+With the basics of blocks out of the way, here are some more details about the language in no particular order:
+
+the `dreturn` keyword can be used to defer a return until execution of a block stops. Precedence order for the three methods of return is: explicit `return` statement; `dreturn` statement; final line without semicolon. If a `dreturn` is used but the final line has no semicolon, there will be a warning on compilation.
 
 	{
 		x: 1;
 		dreturn x;
 		// some condition that modifies x
-	}
+	};
 
 scope cascades from one nested block to the next. If a name is not found in the local scope, above scopes will be searched.
 
@@ -29,7 +67,9 @@ variables are declared and defined in name:value syntax like an object in other 
 	x: 1;
 	y: 2;
 	
-This is to reduce the ambiguity that may occur when code is spoken. {x: 1} should be read as "x becomes 1," or "set x to one," and {x = 1} should be read as "x equals one"
+This is to reduce the ambiguity that may occur when code is spoken, and semantic errors that can come from using the wrong number of equal signs. `{x: 1}` should be read as "x becomes 1," or "set x to one," and `{x = 1}` should be read as "x equals one". 
+
+If you've just said "set `variable` to one", and the next set of statements are also simple declarations, you should simply state the name of each variable and then its value after a slight pause. `{x: 1; y: 2; z: 3; ..}` can be read, "set x to 1 .. y, 2 .. z, 3 ..". Yes, `blocks` has a spec for how it should be spoken.
 
 In most cases, a comma is equivalent to a semicolon. There is a difference between the two that will be discussed further down.
 
@@ -37,23 +77,25 @@ In most cases, a comma is equivalent to a semicolon. There is a difference betwe
 		x: 20,
 		y: 100,
 		z: x + y;
-	}
+	};
 
-you may pass values into the local scope of a code block by linking them with a tilde character. Values not passed into the local scope will still be available as detailed above. 
+you may pass values into the local scope of a code block by linking them with a tilde character.
 
 	{codeblock1}~{codeblock2} // codeblock2 now has local access to variables defined in codeblock1.
 
-For a code block to accept values into its local scope, it must declare vacancies. These are typed and named:
+For a code block to expect values in its local scope, it should declare vacancies. These are typed and named:
 
 	block: $(int x, int y){x + y};
 	
 Values will file from the top of one code block's scope to the next until the second one runs out of vacancies. variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
 
-The basic types are int, float, char, ptr, and null. Types are inferred on declaration. If addition is performed between these four, it will have a predefined behavior. If a pointer to a code block is the left operator, that code block will be searched for a dynamic block named "add". The right operator will be passed into it. A similar situation exists for other built in behaviors.
+If vacancies are not declared, a new scope to house both blocks will be defined, and they will be copied to it. This can be useful if you want to keep some data separate for organization, but eventually want them to occupy a single object. For example, defining object methods and object members in different blocks and then joining them before returning.
 
-If outside of a vacancy declaration for a code block, any type name (as well as common declaration keywords such as 'let', 'var' and 'const') will be ignored by the compiler. These can be included for readabliity.
+The basic types are `int`, `float`, `char`, `ptr`, and `null`. Types are inferred on declaration with the exception of vacancies, but they are strict. If addition is performed between these four, it will have a predefined behavior. If a pointer to an `unterminated` code block is the left operator, that code block will be searched for a `dynamic` block named `__add__`. The right operator will be passed into it. This is similar for other built-in operations. A print block is not technically a part of the language spec, but it should check the object passed into it for a `__str__` method if it is not a primitive.
 
-A code block must be terminated by a semicolon if it is the end of a line.
+If outside of a vacancy declaration for a code block, any type name (as well as common declaration keywords such as `let`, `var` and `const`) will be ignored by the compiler. They can be included for readablity. There are a few other tokens that will be ignored by default so they can be included for readability. The compiler can be configured using flags (or a config file) to treat these tokens as valid names rather than ignoring them. Additional sets of ignored tokens can also be included. If an opinionated developer shares their source code but has included/removed ignored tokens, it will probably crash if you try to compile it. So you should probably leave the defaults alone or at least share your config file, but I'm not your boss.
+
+A code block can potentially be an expression inside a larger statement. Therefore, code blocks need to have a semicolon if they end a statement.
 
 Common symbols for logical operators are used: and -> &&; or -> ||; not -> !;
 However, many bitwise operators' symbols are reserved for specific purposes. Even if a bitwise operator's common symbol is unused for any other purpose, a bitwise operator should always be affixed with '^'.
@@ -73,56 +115,51 @@ There is an argument for shift operations not conforming to this convention, as 
 
 all blocks can be loops and can be condition-controlled; define run conditions before and after block:
 
-	[pre-check]{code}[post-check]
+	[pre-check](code)[post-check] // any static block can be condition controlled, but local blocks are well suited for common logic flow patterns.
 	
-the pre-check determines whether the code should be executed; the post-check determines whether it should be executed again. If the pre-check is omitted, it is assumed to be true; if the post-check is omitted, it will be assumed to be false. A successful post-check will always run the pre-check again. This allows an equivalent to if statements,
+the pre-check determines whether the code should be executed; the post-check determines whether it should be executed again. If the pre-check is omitted, it is assumed to be `true`; if the post-check is omitted, it will be assumed to be `false`. A successful post-check will always run the pre-check again. This allows an equivalent to `if` statements,
 
-	[i < 3]{some code}; // post-check is assumed to be false
+	[i < 3](some code); // post-check is assumed to be false
 
-an equivalent to do loops,
+an equivalent to `do` loops,
 
-	{some code; i++}[i < 3]; // pre-check is assumed to be true
+	i: 0;
+	(some code; i++)[i < 3]; // pre-check is assumed to be true
 
-an equivalent to while loops,
+an equivalent to `while` loops,
 
-	[i < 3]{some code; i++}[true]; // post-check always loops the code, but pre-check may prevent it from being run.
+	i: 0;
+	[i < 3](some code; i++)[true]; // post-check always loops the code, but pre-check may prevent it from being run.
 	
-but no direct equivalent to for loops. Since a for loop is only shorthand for a while loop in most languages, it can be done in one line still:
-	
-	{
- 		i: 0;
- 		{[i < 3]{some code; i++}[true];
-	}
- 
-tokens 'if', 'while', 'do', 'for', and the generic 'condition' will be ignored by the compiler and may be included for readability. This means they are not valid names.
+but no direct equivalent to for loops. Since a for loop is only shorthand for a while loop in most languages, those can be used instead. This may be inconvenient for some developers, but converting while loops to for loops is a simple transpilation, so if they're opinionated they can do it that way.
 
-	if [i < 3]{
+tokens `if`, `while`, `do`, `for`, and the generic `condition` will be ignored by the compiler and may be included for readability. This means they are not valid names.
+
+	if [i < 3](
 		// some code
-	}
+	)
 
-to implement an 'else' case, use chaining. Chain two code blocks by using a '|' between them:
+to implement an `else` case, use chaining. Chain two code blocks by using a `|` between them:
 
 	[pre-check]{codeblock1} | [pre-check]{codeblock2} | {codeblock2};
 
 if the pre-check of a block fails the *first* time it runs, the next block in the chain will run. However, if any block pre-check in the chain succeeds, the rest will be passed over.
 
-If a block or each block in a chain of blocks fails its first pre-check, it evaluates to false.
+If a block or each block in a chain of blocks fails its first pre-check, it evaluates to `false`.
 
 a code block that links from another block's scope depends on that block's execution to execute.
 
 	[false]{1, 2,}~$sum; // sum is unreachable.
 
-a "$" prefix defines a code block as dynamic; the block is not evaluated immediately. It maintains a scope as long as its parent scope still exists. This means it can be saved and re-evaluated:
+a "$" prefix defines a code block as `dynamic`; the block is not evaluated immediately. Instead, it returns a pointer to code to be used later.
 
 	sum: $(int x, int y){ x + y };
 	
-It is saved as a pointer.
-	
-A code block without "$" prefix will "collapse" into its return value after failing to run and is called "static".
+A code block without "$" prefix will evaluate into its return value after failing to run and is called `static"`
 
-Static code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if return is explicitly called.
+`static` code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if `return` is explicitly called.
 
-to create a static instance of a dynamic code block (thereby running it), prefix it with another "$". Think of the dollar symbols as canceling each other out:
+to create a static instance of a `dynamic` code block (thereby running it), prefix it with another "$". Think of the dollar symbols as canceling each other out:
 	
 	// this is equivalent to a static code block:
 	$${some code here;}; 
@@ -133,29 +170,29 @@ to create a static instance of a dynamic code block (thereby running it), prefix
 	
 	// note: evaluating a static code block without linking values into its vacancies is valid and assumes the values to be null.
 
-a static code block prefixed with a "?" inside a dynamic code block will be captured as its value once the dynamic code block is evaluated:
+a `local` code block prefixed with a "?" inside a `dynamic` code block will be captured as its value when the dynamic code block is evaluated:
 
 	x: 1;
 	y: 2;
 
-	sum: $(int x, int y){ ?{x} + y };
+	sum: $(int x, int y){ ?(x) + y };
 	
-In the above case, the "sum" code block (which behaves like a function) does not behave as one might expect upon looking at it. Because x is inside a static code block prefixed by "?" (called pseudo-static), it is evaluated once and never again, somewhat like a macro. when sum is evaluated, x will always be 1; the code block is equivalent to {1 + y}. If this is intended, x should not be passed into the local scope of sum.
+In the above case, the `sum` code block (which behaves like a function) does not behave as one might expect upon looking at it. Because `x` is inside a static code block prefixed by `?`, it is evaluated once and never again, somewhat like a macro. when sum is instantiated and its code is run, `x` will always be 1; the code block is equivalent to `{1 + y}`. If this is intended, `x` should not be passed into the local scope of `sum` unless you care about the minor performance improvement of only having to check local scope.
 
-If a constant is alone on a line that it is terminated by a comma (like {0,}), it is unnamed but still added to the local scope. Since items are linked into another scope by index and not by name, you can declare a code block without names and pass it into another block:
+If a constant is alone on a line that it is terminated by a comma (like `{0,}`), it is unnamed but still added to the local scope of that block. Since items are linked into another scope by index and not by name, you can declare a code block without names and pass it into another block:
 
 	{0, 2,}~$sum;
 	
-A final type of code block is "unterminated". if a code block does not return anything (either explicitly with return; or implicitly with a final line without a semicolon), it will be unterminated. Unterminated code blocks return a pointer to their active scope.
+A final type of code block is `unterminated`. if a code block does not return anything (either explicitly with return; or implicitly with a final line without a semicolon), it will be `unterminated`. `unterminated` code blocks return a pointer to their active scope.
 
 	items: {
 		x: 1,
 		y: 2,
 	}
 	
-if a code block is intended to be unterminated, it can be prefixed with a "\*" char. code blocks that do not terminate but have no "\*" prefix will produce a warning upon compilation. 
+if a code block is intended to be `unterminated`, it can be prefixed with a `*` char. code blocks that do not terminate but have no `*` prefix will produce a warning upon compilation. 
 
-unterminated code blocks' local scope can be accessed from outside by either name or index. To access a named value in a code block, use a ".":
+`unterminated` code blocks' local scope can be accessed from outside by either name or index. To access a named value in a code block, use a `.`:
 
 	data: *{
 		x: 1;
@@ -164,7 +201,7 @@ unterminated code blocks' local scope can be accessed from outside by either nam
 	};
 	data.x++;
 	
-to access by index, use a "@":
+to access by index, use a `@`:
 
 	data: *{1, 2, 3,};
 	data@0: data@0 + 1; // @ operator takes precedence
@@ -189,30 +226,28 @@ as a funny coincidence, most emails are valid syntax:
 	bar: 0;
 	foo@bar.com: 1;
 
-evaluated code blocks can be indexed into as well. Indexing a code block by either name or number will override all return statements and return the specified value. There 
-
 to review, there are 4 different types of code block:
 
-A "static" code block is evaluated into its return value, and then its scope is destroyed:
+A `static` code block is evaluated into its return value, and then its scope is destroyed:
 	
 	x: {1 + 2};
 	
-A "dynamic" code block is not evaluated, and is stored as a pointer to its code:
+A `dynamic` code block is not evaluated, and is stored as a pointer to its code:
 
 	sum: ${1 + 2};
 	
-An "unterminated" code block is evaluated, but its scope is not destroyed and it returns a pointer to its final state:
+An `unterminated` code block is evaluated, but its scope is not destroyed and it returns a pointer to its final state:
 
 	array: *{1, 2, 3,};
 	object: *{x: 2; y: 3;};
 	
-a "pseudostatic" code block is evaluated in macro-like fashion inside a dynamic code block. When a dynamic code block is defined, any pseudostatic blocks inside will be "baked" into the block permanently as what they evaluate to:
+a `pseudostatic` code block is evaluated in macro-like fashion inside a `dynamic` code block. When a `dynamic` code block is defined, any `pseudostatic` blocks inside will be "baked" into the block permanently as what they evaluate to:
 
 	x: 1;
 	y: $random; // assume a random function exists
-	block: $(int x){?{y} + x};
+	block: $(int x){?(y) + x};
 
-the 'dump' keyword can be used to move a variable from the child scope into the parent scope. To dump it with its current name, use a semicolon. To dump it unnamed, use a comma.
+the `dump` keyword can be used to copy a variable from the child scope into the parent scope. To dump it with its current name, use a semicolon. To dump it unnamed, use a comma.
 
 	{
 		x: 1;
@@ -249,9 +284,9 @@ in languages that often use anonymous function callbacks for simple tasks such a
 		})
 	}
  
-In this example, returning true will only return out of the forEach callback; the main hasB function won't return. There are plenty of simple alternatives, but it can be frustrating to start with a `.forEach()` and then realize you have to replace it with another type of for loop or use a flag variable because you want to return something.
+In this example, returning true will only return out of the `forEach` callback; the main `hasB` function won't return. There are plenty of simple alternatives, but it can be frustrating to start with a `.forEach()` and then realize you have to replace it with another type of for loop or use a flag variable because you want to return something.
 
-Additionally, since conditionals have their own scope from which to return in `blocks`, returning can be a little obtuse:
+Additionally, since scoped blocks have their own scope from which to return in `blocks`, returning can be a little obtuse if you insist on using them:
 
  	{
 		length: $(ptr string){
@@ -278,9 +313,9 @@ luckily, `blocks` has a solution to these problems. If a function has defined a 
 		}
 	}
 
-if a `return` has the syntax `return name: value`, it will search starting in its local scope and moving up until it finds a dreturn that expects the same name. Then, that scope and all its child scopes will be destroyed and the parent block will return the proper value.
+if a `return` has the syntax `return name: value`, it will search starting in its local scope and moving up until it finds a `dreturn` that expects the same name. Then, that scope and all its child scopes will be destroyed and the parent block will return the proper value.
 
-the 'this' keyword is a pointer to the current scope. It can be used to search for a variable, but raise an error if it doesn't exist locally rather than checking upper scopes. This means it cannot be used quite like in other languages like javascript:
+the `this` keyword is a pointer to the current scope. It can be used to search for a variable, but raise an error if it doesn't exist locally rather than checking upper scopes, like `this.x`. This means it cannot be used quite like in other languages like javascript:
 
 	object: *{
 		x: 1;
@@ -289,17 +324,66 @@ the 'this' keyword is a pointer to the current scope. It can be used to search f
 			};
 	};
 
-in other languages, 'this' refers to the object a method is being called on so that the method can be used to modify and access object variables.
-In blocks, 'this' is a reference to the start of the current scope. It has to be used in a special way:
+in other languages, `this` refers to the object a method is being called on so that the method can be used to modify and access object variables.
+In blocks, `this` is a reference to the start of the current scope. It has to be used in a special way:
 
 	object: *{
 		x: 1;
 		method: ${
-			?{this}.x + 1 // perfect! In this case, since 'this' is used in a pseudostatic block, it is captured as a pointer to 'object'.
+			?(this).x + 1 // perfect! In this case, since 'this' is used in a pseudostatic block, it is captured as a pointer to 'object'.
 		};
 	};
 
-To use 'this' as one would in javascript or C++, you must use a pseudostatic code block to bake a pointer to the parent object into the method.
+To use `this` as one would in javascript or C++, you must use a pseudostatic code block to capture a pointer to the parent object into the method.
+
+When a variable is set in a local scope and it exists in an upper scope, it will create a local variable with the same name rather than modifying the upper scope's variable. If you want to modify a value from an upper scope, use the `bind` and `update` keywords:
+
+	{
+	  x: 0;
+	  bind x;
+	  // an arbitrary number of scopes deep:
+	    {
+	      update x: 3;
+	    };
+	}
+
+using `bind name` in a scope will warn you if you use `bind` with the same name in child scopes. This is also true of `dreturn`.
+if `update name` is missing a value, it is equivalent to `update name: name`; in other words, the name will be searched for in the local scope, going up until it is found.
+
+To summarize the available tools for managing scope:
+
+- using a `local` code block or a single statement: local code blocks and single statements are appropriate anywhere a code block is, and do not spawn their own scope.
+- properly managing the `dump` keyword: you can pass variables back to the parent scope by name, or as unnamed values.
+- `dreturn: values` can be returned to an upper scope by declaring them with dreturn and then using `return name: value` at any depth.
+- `bind`/`update`: values can be updated from any depth by declaring them with `bind`.
+
+In some cases, you may want initialize an `unterminated` block to use as an object, but you pollute the scope of that block with variables you only need for logic:
+
+	complexObject: *{
+	  x: 1;
+	  y: 2;
+	  condition: "this string"; // I don't want condition saved as a member of complexObject, but I need it for logic.
+	  if [condition == "that string"] (
+	    z: 4;
+	  ) |
+	  else (
+	    z: 5;  
+	  );
+	}
+In this case, you should probably store your relevant members in a clean `members` wrapper, but I'm not your boss, so you can also clean up an object using the `disown` keyword. This keyword will delete an item from a scope.
+
+	complexObject: {
+	  x: 1;
+	  y: 2;
+	  condition: "this string";
+	  if [condition == "that string"] (
+	    z: 4;
+	  ) |
+	  else (
+	    z: 5;  
+	  );
+	  disown condition; // now complexObject is clean.
+	}
 
 A full list of keywords is: {
 	dump,
@@ -307,13 +391,16 @@ A full list of keywords is: {
 	dreturn,
 	break,
 	it,
-	this
+	this,
+ 	bind,
+  	update,
+    	disown
 }
 	
 
-Equality is checked using any number of equal signs. {x = y} is just as valid as {x == y}, and even {x ============== y}.
+Equality is checked using any number of equal signs. `{x = y}` is just as valid as `{x == y}`, and even `{x ============== y}`.
 
-when used on an assignment line, the token "it" may be used to refer to the value being assigned to:
+when used on an assignment line, the token `it` may be used to refer to the value being assigned to:
 
 	x: it+1; 
 	
@@ -325,7 +412,7 @@ when used on an assignment line, the token "it" may be used to refer to the valu
 	
 	x++;
 
-'it' is short for 'itself', which may also be used. 'itself' may feel more natural, but it also may conflict conceptually with the common 'self' keyword in other languages.
+`it` is short for `itself`, which may also be used. `itself` may feel more natural, but it also may conflict conceptually with the common `self` keyword in other languages.
 
 	x: itself + 1;
 	
@@ -342,20 +429,21 @@ this is a typing convenience for when a long or complicated name is used in the 
 	
 	this.variable.is@nested: it + 5;
 
-Here is the fully featured dynamic code block syntax:
+Here is the fully featured `dynamic` code block syntax:
 
 	$(args){codeblock}
 
 Note that prechecks and postchecks are not included.
 	
-static code block:
+`static` code block:
 	
-	(args)[check-before]{codeblock}[check-after]
+	[check-before]{codeblock}[check-after]
 	
-pseudostatic code block:
-	?(args)[check-before]{codeblock}[check-after]
+`pseudostatic` code block:
 
-The blocks language will not prioritize having built-in code blocks to perform operations like i/o access. As per the language's philosophy, there should be zero functionality that *requires* engaging with a black box. Don't get me wrong—the compiler will place standard code blocks like `print`, `readfile`, etc. into the scope of your program if you choose to include them, but the source code for these functions will be stored locally and easily viewed/modified.
+	?[check-before](codeblock)[check-after]
+
+The blocks language will not prioritize having built-in code blocks to perform operations like i/o access. As per the language's philosophy, there should be zero functionality that *requires* engaging with a black box. Don't get me wrong—the compiler will place standard code blocks like `print`, `readfile`, etc. into the scope of your program if you choose to include them, but the source code for these functions will be stored locally and easily viewed/modified. And since they won't be a priority, the available functions will be pretty bare-bones unless some good samaritans want to contribute an extensive standard library in a new, odd language.
 
 # Some example code
 ==================================================
@@ -366,8 +454,8 @@ sum: $int, int{
 
 amount: {x:1, y:2}~$sum;
 
-
-{0,}~{i++;}[i < amount];
+i: 0;
+(i++)[i < amount];
 
 ```
 // more in example.bl
