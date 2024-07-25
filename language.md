@@ -46,7 +46,7 @@ If async support is added to this language, blocks that may terminate but have n
 
 A final "code block" type is `pseudostatic`. `pseudostatic` code blocks are not really code blocks, but they have a similar syntax. If a `pseudostatic` block is placed inside a `dynamic` block, the value it evaluates to will be captured when the dynamic block is created. When the block is instantiated and run later, that value will always be the same.
 
-You may notice that `local` code blocks seem to overwrite the syntax of enclosed expressions in other languages. This is because local code blocks are meant to be an extension of the concept of expressions, allowing them to have multiple statements and use `return` to define what they evaluate to. However, the expected functionality of expressions remains intact: `x: (x + 5);` still sets x to `(x + 5)`. When the final line of a code block lacks a semicolon, this line is implied to return the value of its expression. Therefore, when a `local` code block has only one statement, it behaves exactly like parentheses-enclosed expressions do in other languages. In fact, when a compiler is written, it will likely detect when a `local` block has only one expression and avoid the overhead of making it into a code block.
+You may notice that `local` code blocks seem to overwrite the syntax of enclosed expressions in other languages. This is because local code blocks are meant to be an extension of the concept of expressions, allowing them to have multiple statements. However, the expected functionality of expressions remains intact: `x: (x + 5);` still sets x to `(x + 5)`. When the final line of a code block lacks a semicolon, this line is implied to return the value of its expression. Therefore, when a `local` code block has only one statement, it behaves exactly like parentheses-enclosed expressions do in other languages. In fact, when a compiler is written, it will likely detect when a `local` block has only one expression and avoid the overhead of making it into a code block. Since all keywords, including `return`, operate in the context of the parent function, a `local` code block always evaluates to its last statement.
 
 *note: I'm still undecided whether pseudostatic blocks should be allowed to be contain several statements or just one expression. I can't see why you would want to run multiple statements inside a pseudostatic block, but I also don't see a great reason to take that freedom away from the user. Either way, users can force it to use multiple lines by nesting a code block inside it, so it doesn't matter much.*
 
@@ -159,7 +159,7 @@ tokens `if`, `while`, `do`, `for`, and the generic `condition` will be ignored b
 
 	if [i < 3](
 		// some code
-	)
+	);
 
 to implement an `else` case, use chaining. Chain two code blocks by using a `|` between them:
 
@@ -210,7 +210,7 @@ A final type of code block is `unterminated`. if a code block does not return an
 	items: {
 		x: 1,
 		y: 2,
-	}
+	};
 	
 if a code block is intended to be `unterminated`, it can be prefixed with a `*` char. code blocks that do not terminate but have no `*` prefix will produce a warning upon compilation. Additionally, any returns will produce a warning.
 
@@ -310,7 +310,7 @@ in languages that often use anonymous function callbacks for simple tasks such a
  
 In this example, returning true will only return out of the `forEach` callback; the main `hasB` function won't return. There are plenty of simple alternatives, but it can be frustrating to start with a `.forEach()` and then realize you have to replace it with another type of for loop or use a flag variable because you want to return something.
 
-Additionally, since scoped blocks have their own scope from which to return in `blocks`, returning can be a little obtuse if you insist on using them:
+Additionally, since `scoped` blocks have their own scope from which to return in `blocks`, returning can be a little obtuse if you insist on using them:
 
  	{
 		length: $(ptr string){
@@ -319,11 +319,11 @@ Additionally, since scoped blocks have their own scope from which to return in `
 				lengthFound: list@i == '\0'; // keep in mind, a code block that fails its first pre-check evaluates to false	
 				dump lengthFound;
 				dump i: it + 1;
-			}[!lengthFound]
+			}[!lengthFound];
    			
    			return i - 1;
-		}
-  	}
+		};
+  	};
 
 luckily, `blocks` has a solution to these problems. If a function has defined a deferred return, you can use a special syntax to execute that return in that scope with a specific value:
 
@@ -332,10 +332,10 @@ luckily, `blocks` has a solution to these problems. If a function has defined a 
    			l: 0;
 	  		dreturn l;
 	 		{
-				[string@l == '\0']{return l: l}
-			}[true]
-		}
-	}
+				[string@l == '\0']{return l: l} // return name: value is a special syntax.
+			}[true];
+		};
+	};
 
 if a `return` has the syntax `return name: value`, it will search starting in its local scope and moving up until it finds a `dreturn` that expects the same name. Then, that scope and all its child scopes will be destroyed and the parent block will return the proper value.
 
@@ -359,6 +359,7 @@ In blocks, `this` is a reference to the start of the current scope. It has to be
 	};
 
 To use `this` as one would in javascript or C++, you must use a pseudostatic code block to capture a pointer to the parent object into the method.
+This has the disadvantage that a method for a given object will always refer to that object, even if it's assigned to a different one. However, assigning methods from one object to another isn't very common, and I can't imagine a case where it would be good practice and couldn't be achieved through other means.
 
 When a variable is set in a local scope and it exists in an upper scope, it will create a local variable with the same name rather than modifying the upper scope's variable. If you want to modify a value from an upper scope, use the `bind` and `update` keywords:
 
@@ -369,7 +370,7 @@ When a variable is set in a local scope and it exists in an upper scope, it will
 	    {
 	      update x: 3;
 	    };
-	}
+	};
 
 using `bind name` in a scope will warn you if you use `bind` with the same name in child scopes. This is also true of `dreturn`.
 if `update name` is missing a value, it is equivalent to `update name: name`; in other words, the name will be searched for in the local scope, going up until it is found.
@@ -393,7 +394,7 @@ In some cases, you may want initialize an `unterminated` block to use as an obje
 	  else (
 	    z: 5;  
 	  );
-	}
+	};
 In this case, you should probably store your relevant members in a clean `members` wrapper, but I'm not your boss, so you can also clean up an object using the `disown` keyword. This keyword will delete an item from a scope.
 
 	complexObject: {
@@ -407,13 +408,12 @@ In this case, you should probably store your relevant members in a clean `member
 	    z: 5;  
 	  );
 	  disown condition; // now complexObject is clean.
-	}
+	};
 
 A full list of keywords is: {
 	dump,
 	return,
 	dreturn,
-	break,
 	it,
 	this,
  	bind,
@@ -472,7 +472,7 @@ The blocks language will not prioritize having built-in code blocks to perform o
 # Some example code
 ==================================================
 ```
-sum: $int, int{
+sum: $(int, int){
 	x + y
 };
 
