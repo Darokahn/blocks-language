@@ -12,7 +12,9 @@ A code block is a set of statements with its own unique scope, or a compound sta
 	};
 ```
 
-A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the return keyword, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
+A block always evaluates to (returns) something or links into another. If the final line in a block has no semicolon, it is assumed to return. If nothing is returned by this means or the `<<` operator, the code block will be "unterminated" and will return a pointer to its own scope. Any other lines without a semicolon will result in a syntax or semantic error, depending on whether following lines accidentally continue the unterminated line with valid syntax.
+
+The `<<` is used to signify passing data backwards, and it is chosen in favor of a `return` keyword.
 
 Anywhere a statement is allowed, a code block is as well; and vice versa. Languages like C can accept a code block or a single statement interchangeably in some circumstances (for example, `if` statements). However, certain idioms like function definition do not allow this. `blocks`, however, has fully interchangeable statements and code blocks.
 
@@ -46,17 +48,17 @@ If async support is added to this language, blocks that may terminate but have n
 
 A final "code block" type is `pseudostatic`. `pseudostatic` code blocks are not really code blocks, but they have a similar syntax. If a `pseudostatic` block is placed inside a `dynamic` block, the value it evaluates to will be captured when the dynamic block is created. When the block is instantiated and run later, that value will always be the same.
 
-You may notice that `local` code blocks seem to overwrite the syntax of enclosed expressions in other languages. This is because local code blocks are meant to be an extension of the concept of expressions, allowing them to have multiple statements. However, the expected functionality of expressions remains intact: `x: (x + 5);` still sets x to `(x + 5)`. When the final line of a code block lacks a semicolon, this line is implied to return the value of its expression. Therefore, when a `local` code block has only one statement, it behaves exactly like parentheses-enclosed expressions do in other languages. In fact, when a compiler is written, it will likely detect when a `local` block has only one expression and avoid the overhead of making it into a code block. Since all keywords, including `return`, operate in the context of the parent function, a `local` code block always evaluates to its last statement.
+You may notice that `local` code blocks seem to overwrite the syntax of enclosed expressions in other languages. This is because local code blocks are meant to be an extension of the concept of expressions, allowing them to have multiple statements. However, the expected functionality of expressions remains intact: `x: (x + 5);` still sets x to `(x + 5)`. When the final line of a code block lacks a semicolon, this line is implied to return the value of its expression. Therefore, when a `local` code block has only one statement, it behaves exactly like parentheses-enclosed expressions do in other languages. In fact, when a compiler is written, it will likely detect when a `local` block has only one expression and avoid the overhead of making it into a code block. Since all operators, including `<<`, operate in the context of the parent function, a `local` code block always evaluates to its last statement.
 
 *note: I'm still undecided whether pseudostatic blocks should be allowed to be contain several statements or just one expression. I can't see why you would want to run multiple statements inside a pseudostatic block, but I also don't see a great reason to take that freedom away from the user. Either way, users can force it to use multiple lines by nesting a code block inside it, so it doesn't matter much.*
 
 With the basics of blocks out of the way, here are some more details about the language in no particular order:
 
-the `dreturn` keyword can be used to defer a return until execution of a block stops. Precedence order for the three methods of return is: explicit `return` statement; `dreturn` statement; final line without semicolon. If a `dreturn` is used but the final line has no semicolon, there will be a warning on compilation.
+the `>>` operator can be used to defer a return until execution of a block stops. It is useful to clearly declare what your function will be returning at the very top. If a code block finishes execution without an explicit `<<`, the `>>` will activate for the value specified. Precedence order for the three methods of return is: explicit `<<` operator; `>>` operator; final line without semicolon. If a `>>` is used but the final line has no semicolon, there will be a warning on compilation.
 
 	{
 		x: 1;
-		dreturn x;
+		>> x;
 		// some condition that modifies x
 	};
 
@@ -175,7 +177,7 @@ a "$" prefix defines a code block as `dynamic`; the block is not evaluated immed
 	
 A code block without "$" prefix will evaluate into its return value after failing to run and is called `static"`
 
-`static` code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if `return` is explicitly called.
+`static` code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if `<<` is explicitly called.
 
 to create a static instance of a `dynamic` code block (thereby running it), prefix it with another "$". Think of the dollar symbols as canceling each other out:
 	
@@ -201,7 +203,7 @@ If a constant is alone on a line that it is terminated by a comma (like `{0,}`),
 
 	{0, 2,}~$sum;
 	
-A final type of code block is `unterminated`. if a code block does not return anything (either explicitly with return; or implicitly with a final line without a semicolon), it will be `unterminated`. `unterminated` code blocks return a pointer to their active scope.
+A final type of code block is `unterminated`. if a code block does not return anything (either explicitly with `<<`; or implicitly with a final line without a semicolon), it will be `unterminated`. `unterminated` code blocks return a pointer to their active scope.
 
 	items: {
 		x: 1,
@@ -210,7 +212,9 @@ A final type of code block is `unterminated`. if a code block does not return an
 	
 if a code block is intended to be `unterminated`, it can be prefixed with a `*` char. code blocks that do not terminate but have no `*` prefix will produce a warning upon compilation. Additionally, any returns will produce a warning.
 
-Since `this` is a pointer to the local scope, a `return this;` statement will also create an unterminated code block. This is a more intentional way of creating a static code block in case the `*` prefix and compilation warnings don't put you at ease.
+Since `this` is a pointer to the local scope, a `<< this;` statement will also create an unterminated code block. This is a more intentional way of creating a static code block in case the `*` prefix and compilation warnings don't put you at ease.
+
+// note: the prior paragraph needs reconsideration
 
 `unterminated` code blocks' local scope can be accessed from outside by either name or index. To access a named value in a code block, use a `.`:
 
@@ -267,13 +271,13 @@ a `pseudostatic` code block is evaluated in macro-like fashion inside a `dynamic
 	y: $random; // assume a random function exists
 	block: $(int x){?(y) + x};
 
-the `dump` keyword can be used to copy a variable from the child scope into the parent scope. To dump it with its current name, use a semicolon. To dump it unnamed, use a comma.
+the `<<<` operator can be used to copy a variable from the child scope into the parent scope. This action is called a 'dump'. To dump a varible with its current name, use a semicolon. To dump it unnamed, use a comma.
 
 	{
 		x: 1;
 		{
 			y: x + 2;
-			dump y;
+			<<< y;
 		};
 		{y}~$print;
 	};
@@ -283,22 +287,22 @@ this can be used to initialize arrays:
 	array: {
  		i: 0;
 		for [i < 9]{
-			dump i,
+			<<< i,
    			i: it+1;
 		}[true];
 	};
 
-additionally, you can use the syntax `dump name: value` to dump a value with any name into the parent scope.
+additionally, you can use the syntax `<<< name: value` to dump a value with any name into the parent scope.
 a named dump will overwrite any variables with the same name in the parent scope.
 
-a `dump;` on its own will dump the entire local scope into the parent scope. It's probably a bad idea to do that in most cases, but hey, I'm not your boss.
+a `<<<;` on its own will dump the entire local scope into the parent scope. It's probably a bad idea to do that in most cases, but hey, I'm not your boss.
 
 in languages that often use anonymous function callbacks for simple tasks such as javascript, `return`ing the right value from the right scope can be tricky. For example:
 
 	// javascript code
  	function hasB(list) {
   		list.forEach(function(item) {
-   			if (item === "b") {
+   			if (item === "B") {
      				return true;
 			}
 		})
@@ -312,12 +316,12 @@ Additionally, since `scoped` blocks have their own scope from which to return in
 		length: $(ptr string){
   			i: 0;
 	 		{
-				lengthFound: list@i == '\0'; // keep in mind, a code block that fails its first pre-check evaluates to false	
-				dump lengthFound;
-				dump i: it + 1;
+				lengthFound: list@i == '\0';
+				<<< lengthFound;
+				<<< i: it + 1;
 			}[!lengthFound];
    			
-   			return i - 1;
+   			<< i - 1;
 		};
   	};
 
@@ -326,14 +330,14 @@ luckily, `blocks` has a solution to these problems. If a function has defined a 
 	{
  		length: $(ptr string){
    			l: 0;
-	  		dreturn l;
+	  		>> l;
 	 		{
-				[string@l == '\0']{return l: l} // return name: value is a special syntax.
+				[string@l == '\0']{<< l: l} // << name: value is a special syntax.
 			}[true];
 		};
 	};
 
-if a `return` has the syntax `return name: value`, it will search starting in its local scope and moving up until it finds a `dreturn` that expects the same name. Then, that scope and all its child scopes will be destroyed and the parent block will return the proper value.
+if a `<<` has the syntax `<< name: value`, it will search starting in its local scope and moving up until it finds a `>>` that expects the same name. Then, that scope and all its child scopes will be destroyed and the parent block will return the proper value.
 
 the `this` keyword is a pointer to the current scope. It can be used to search for a variable, but raise an error if it doesn't exist locally rather than checking upper scopes, like `this.x`. This means it cannot be used quite like in other languages like javascript:
 
@@ -374,8 +378,8 @@ if `update name` is missing a value, it is equivalent to `update name: name`; in
 To summarize the available tools for managing scope:
 
 - using a `local` code block or a single statement: local code blocks and single statements are appropriate anywhere a code block is, and do not spawn their own scope.
-- properly managing the `dump` keyword: you can pass variables back to the parent scope by name, or as unnamed values.
-- `dreturn: values` can be returned to an upper scope by declaring them with dreturn and then using `return name: value` at any depth.
+- properly managing the `<<<` operator: you can pass variables back to the parent scope by name, or as unnamed values.
+- `>>: values` can be returned to an upper scope by declaring them with >> and then using `<< name: value` at any depth.
 - `bind`/`update`: values can be updated from any depth by declaring them with `bind`.
 
 In some cases, you may want initialize an `unterminated` block to use as an object, but you pollute the scope of that block with variables you only need for logic:
@@ -407,15 +411,14 @@ In this case, you should probably store your relevant members in a clean `member
 	};
 
 A full list of keywords is: {
-	dump,
-	return,
-	dreturn,
 	it,
 	this,
  	bind,
   	update,
     	disown
 }
+
+// note: I am currently working on whittling this list down further. The only permanent tenants I intend to have are `it` and `this`.
 	
 
 Equality is checked using any number of equal signs. `{x = y}` is just as valid as `{x == y}`, and even `{x ============== y}`.
