@@ -69,8 +69,6 @@ variables are declared and defined in name:value syntax like an object in other 
 	
 This is to reduce the ambiguity that may occur when code is spoken, and semantic errors that can come from using the wrong number of equal signs. `{x: 1}` should be read as "x becomes 1," or "set x to one," and `{x = 1}` should be read as "x equals one". 
 
-If you've just said "set `variable` to one", and the next set of statements are also simple declarations, you should simply state the name of each variable and then its value after a slight pause. `{x: 1; y: 2; z: 3; ..}` can be read, "set x to 1 .. y, 2 .. z, 3 ..". Yes, `blocks` has a spec for how it should be spoken.
-
 In most cases, a comma is equivalent to a semicolon. There is a difference between the two that will be discussed further down.
 
 	{
@@ -79,41 +77,39 @@ In most cases, a comma is equivalent to a semicolon. There is a difference betwe
 		z: x + y;
 	};
 
-you may pass values into the local scope of a code block by linking them with a tilde character.
+`blocks` allows you to 'link' values from one scope into another. It uses the `~`.
+The basic concept of a link is to move values from the scope of the left operand into the scope of the right operand.
+The basic rules of how this works are: "Evaluate the left hand operator until it becomes either an `unterminated` code block or a primitive value; start the right hand operator with the primitive or the values in the block as members of its own scope."
+In the special case of `unterminated` block being the right hand operator, the right block will just be appended onto the left block.
+
+The right hand term must be either an `unterminated` code block or an instance of a `static` code block. Otherwise, it will raise an error.
+An instance of a static code block can either be an in-line block or an instantiated `dynamic` block. Either way, the right hand operator must be a case in which the imperative is to run code. The exception to this rule is when the right hand operator is an unterminated block; in this case, a special procedure will be followed.
 
 	{codeblock1}~{codeblock2} // codeblock2 now has local access to variables defined in codeblock1.
 
-For a code block to expect values in its local scope, it should declare vacancies. These are typed and named:
+Code blocks can also define 'vacancies', which strictly define which values are allowed into the scope and what they should be called. These are analogous to function arguments in other languages.
 
-	block: $(int x, int y){x + y};
-	
-Values will file from the top of one code block's scope to the next until the second one runs out of vacancies. Other variables do not require a type declaration, but they are strictly typed. If a value of the wrong type attempts to link into a code block's scope, a type error will be raised.
+	code: $(arg1, arg2){some code;}
 
-If vacancies are not declared, there are a few cases to handle. These cases depend on the left and right operators' types. Generally, though, a link is considered an operation on the right hand term, with the left hand term as an operator.
+This line defines a dynamic code block that expects to have values linked into it upon instantiation. A code block with vacancies defined will only accept the number of vacancies into its scope. Therefore, it truncates any extra values beyond the ones it expects. In prior examples, the code block would simply begin running with the original scope as its own new scope. However, in the case of vacancies, the old scope will be processed into a new one before resuming. Values will be considered by index and not by name. If a code block has 2 vacancies, the first 2 items from the original scope will be used, and assigned the names defined by the vacancies.
 
-The right hand term must be either an `unterminated` code block or a `dynamic` code block. Otherwise, it will raise an error.
+// note: When and whether the behavior of vacancies should raise errors/produce warnings is still a consideration. I want arguments to be held to a non-strict standard, but I also want to avoid the semantic errors that follow uncaught type errors.
 
-In cases where the right hand term is `unterminated`:
-* In cases where the left hand term is a primitive type:
-    * The `unterminated` block will check if it has space for a new value in its allocated memory region. If not, it will copy itself to a new region of memory with space for the new value and append it.
-* In cases where the left hand term is also a pointer to an `unterminated` block:
-    * First, the left hand operator will be searched for a `__link__` member. If it's found, the join operation will be tried on what it returns. If not, the same process will occur as with primitives, but each item in the left hand term's scope will be copied after space is checked.
-* In cases where the left hand term is a pointer to a `dynamic` block:
-    * *I am not decided on this one yet. Either it will cause an error, or it will be allowed, and the operators will be treated as switched. In other words, the `unterminated` block will be passed into the `dynamic` block.*
-* In cases where the left hand term is a `static` `scoped` block:
-    * Linking has a higher order of operations than evaluating code blocks. First, the right hand side is evaluated, then the left side. However, the left operator in a Link operation cannot technically be `static`. If at any point it terminates, it will stop operation and be treated as an `unterminated` code block in the Link operation.
+Since `this` is a pointer to the beginning of the current scope, unnamed values from a linked scope can still be accessed by index:
 
-In cases where the right hand term is `dynamic`:
-* In cases where the left hand term is a primitive type:
-    * If the dynamic code block has declared at least one vacancy, the primitive type will file into it unless there's a type mismatch. If the dynamic code block declares no vacancies or uses the wild card vacancy, a new scope is created, and the primitive type is set to be the first local unnamed value.
-* In cases where the left hand term is an `unterminated` code block:
-    * If the `dynamic` block has a set number of vacancies, those vacancies will be filled. If it has no vacancies or uses the wild card, a new scope will be created, the `unterminated` block will be copied into it, and the `dynamic` block will begin its execution in that scope.
-* In cases where the left hand term is `static` `scoped`:
-   & The same behavior will occur as when a `static` block is linked with an `unterminated`.
+	this[0] // this will evaluate to the first value passed in, whether unnamed or named.
 
-A local block can be used as the left hand side of a link operation, but it has no scope to speak of, so it will evaluate and link using whatever it returns.
+This method works decently enough when the block being linked is a set of unnamed values without named ones. With good practice, there shouldn't be much (if any) mixing of named and unnamed values in a single scope, but I'm not your boss, so there's a better way to deal with this.
 
-The basic types are `int`, `float`, `char`, `ptr`, and `null`. Types are inferred on declaration with the exception of vacancies, but they are strict. If addition is performed between these four, it will have a predefined behavior. If a pointer to an `unterminated` code block is the left operator, that code block will be searched for a `dynamic` block named `__add__`. The right operator will be passed into it. This is similar for other built-in operations. A print block is not technically a part of the language spec, but it should check the object passed into it for a `__str__` method if it is not a primitive.
+vacancies declared with a `*` before them will be catch-all containers for named values. In this case, the original names will be respected. The named values will be put inside an unterminated code block, which will then be added to the local scope by the name provided.
+
+Similarly, vacancies declared with two `*` will be catch-all containers for unnamed values. This allows named and unnamed values to be separated into manageable objects, and makes code that uses args and kwargs appear more intentional and readable.
+
+Currently, I haven't worked out the details on how `*` and `**` will interact with regular vacancy declarations. It will probably work about how you would expect, but I still need to iron that out.
+
+// note: the following paragraph is highly subject to change. I still haven't fully decided whether I want strict typing, and I really don't like how the following picks an odd middle ground.
+
+The basic types are `int`, `float`, `char`, `ptr`, and `null`. Types are inferred on declaration, but they are strict. If addition is performed between these four, it will have a predefined behavior. If a pointer to an `unterminated` code block is the left operator, that code block will be searched for a `dynamic` block named `__add__`. The right operator will be passed into it. This is similar for other built-in operations. A print block is not technically a part of the language spec, but it should check the object passed into it for a `__str__` method if it is not a primitive.
 
 If outside of a vacancy declaration for a code block, any type name (as well as common declaration keywords such as `let`, `var` and `const`) will be ignored by the compiler. They can be included for readablity. There are a few other tokens that will be ignored by default so they can be included for readability. The compiler can be configured using flags (or a config file) to treat these tokens as valid names rather than ignoring them. Additional sets of ignored tokens can also be included. If an opinionated developer shares their source code but has included/removed ignored tokens, it will probably crash if you try to compile it. So you should probably leave the defaults alone or at least share your config file, but I'm not your boss.
 
