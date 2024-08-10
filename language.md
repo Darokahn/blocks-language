@@ -418,7 +418,7 @@ A full list of keywords is: {
     	disown
 }
 
-// note: I am currently working on whittling this list down further. The only permanent tenants I intend to have are `it` and `this`.
+// note: I am currently working on whittling this list down further. The only permanent tenants I intend to have are `it` and `this`. A core tenet of `blocks` is that in your code, words should belong to you as much as possible.
 	
 
 Equality is checked using any number of equal signs. `{x = y}` is just as valid as `{x == y}`, and even `{x ============== y}`.
