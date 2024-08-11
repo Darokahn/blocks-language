@@ -109,6 +109,16 @@ Similarly, vacancies declared with two `*` will be catch-all containers for unna
 
 Currently, I haven't worked out the details on how `*` and `**` will interact with regular vacancy declarations. It will probably work about how you would expect, but I still need to iron that out.
 
+Note that since the scope being linked is the left hand operator, the analog to args/functions has the arguments to the left of the function rather than the right, like `{args}~$func`. This has, I think, a pleasant side effect. Suppose you have some functions that each need to run on a point or collection of data in a pipeline. In a generic language, that might look something like this:
+
+	displayResult(formatOutput(processData(filterData(getData(5)))))
+
+I have two key issues with this. First, it evaluates from the inside out—that is, to read it properly, you need to start with the innermost function and then read outwards. Second, the nesting gets overwhelming, and it can be tedious to trace which arguments are being passed to which functions. This can even be the case for a once-nested call. In blocks, however, it looks like:
+
+ 	{5} ~ $getData ~ $filterData ~ $processData ~ $formatOutput ~ $displayResult;
+
+This, to me, is a vast improvement. For one, there is no nest of parentheses that grows ever with the number of calls. Additionally, the data flows in the way we read english—from left to right.
+
 // note: the following paragraph is highly subject to change. I still haven't fully decided whether I want strict typing, and I really don't like how the following picks an odd middle ground.
 
 The basic types are `int`, `float`, `char`, `ptr`, and `null`. Types are inferred on declaration, but they are strict. If addition is performed between these four, it will have a predefined behavior. If a pointer to an `unterminated` code block is the left operator, that code block will be searched for a `dynamic` block named `__add__`. The right operator will be passed into it. This is similar for other built-in operations. A print block is not technically a part of the language spec, but it should check the object passed into it for a `__str__` method if it is not a primitive.
