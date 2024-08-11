@@ -173,7 +173,7 @@ a code block that links from another block's scope depends on that block's execu
 
 a "$" prefix defines a code block as `dynamic`; the block is not evaluated immediately. Instead, it returns a pointer to code to be used later.
 
-	sum: $(int x, int y){ x + y };
+	sum: $(x, y){ x + y };
 	
 A code block without "$" prefix will evaluate into its return value after failing to run and is called `static"`
 
@@ -195,7 +195,7 @@ a `local` code block prefixed with a "?" inside a `dynamic` code block will be c
 	x: 1;
 	y: 2;
 
-	sum: $(int x, int y){ ?(x) + y };
+	sum: $(x, y){ ?(x) + y };
 	
 In the above case, the `sum` code block (which behaves like a function) does not behave as one might expect upon looking at it. Because `x` is inside a static code block prefixed by `?`, it is evaluated once and never again, somewhat like a macro. when sum is instantiated and its code is run, `x` will always be 1; the code block is equivalent to `{1 + y}`. If this is intended, `x` should not be passed into the local scope of `sum` unless you care about the minor performance improvement of only having to check local scope.
 
@@ -269,7 +269,7 @@ a `pseudostatic` code block is evaluated in macro-like fashion inside a `dynamic
 
 	x: 1;
 	y: $random; // assume a random function exists
-	block: $(int x){?(y) + x};
+	block: $(x){?(y) + x};
 
 the `<<<` operator can be used to copy a variable from the child scope into the parent scope. This action is called a 'dump'. To dump a varible with its current name, use a semicolon. To dump it unnamed, use a comma.
 
@@ -279,14 +279,13 @@ the `<<<` operator can be used to copy a variable from the child scope into the 
 			y: x + 2;
 			<<< y;
 		};
-		{y}~$print;
+		y~$print;
 	};
 
 this can be used to initialize arrays:
 
 	array: {
- 		i: 0;
-		for [i < 9]{
+		{i: 0}~[i < 9]{
 			<<< i,
    			i: it+1;
 		}[true];
@@ -310,7 +309,7 @@ in languages that often use anonymous function callbacks for simple tasks such a
  
 In this example, returning true will only return out of the `forEach` callback; the main `hasB` function won't return. There are plenty of simple alternatives, but it can be frustrating to start with a `.forEach()` and then realize you have to replace it with another type of for loop or use a flag variable because you want to return something.
 
-Additionally, since `scoped` blocks have their own scope from which to return in `blocks`, returning can be a little obtuse if you insist on using them:
+Similarly, since `scoped` blocks have their own scope from which to return in `blocks`, returning can be a little obtuse if you insist on using them:
 
  	{
 		length: $(ptr string){
@@ -318,7 +317,7 @@ Additionally, since `scoped` blocks have their own scope from which to return in
 	 		{
 				lengthFound: list@i == '\0';
 				<<< lengthFound;
-				<<< i: it + 1;
+				i: it + 1;
 			}[!lengthFound];
    			
    			<< i - 1;
