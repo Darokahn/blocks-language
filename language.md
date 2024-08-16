@@ -195,7 +195,7 @@ to create a static instance of a `dynamic` code block (thereby running it), pref
 	$${some code here;}; 
 	
 	// this saves the code block and then instantiates it.
-	sum: $(int x, int y){x+y};
+	sum: $(x, y){x+y};
 	$sum;
 	
 	// note: evaluating a static code block without linking values into its vacancies is valid and assumes the values to be null.
@@ -243,7 +243,7 @@ to access by index, use a `@`:
 Arrays can be emulated using a code block and indexing, as seen above. Another example:
 
 	string: *{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\0',}; // typing a string in quotes is shorthand for an unterminated code block with its characters as members. This could have also been {string: "hello world"}.
-	for {0}~(int i)[i < {string;}~$length] { // assume length is a code block
+	for {i: 0}~[i < {string,}~$length] { // assume length is a code block
 		if [string@i = ' ']{
 			string@i: '_';
 		};
@@ -256,9 +256,11 @@ Arrays can be emulated using a code block and indexing, as seen above. Another e
 	
 as a funny coincidence, most emails are valid syntax:
 
-	foo: *{*{bar: 0;},};
+	foo: *{*{com: 0;},};
 	bar: 0;
 	foo@bar.com: 1;
+
+*// Note: This example may break as the details of order of operations are worked out*
 
 to review, there are 4 different types of code block:
 
