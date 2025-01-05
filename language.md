@@ -8,7 +8,7 @@ A code block is a set of statements with its own unique scope, or a compound sta
 	{
 		x: 1;
 		y: 2;
-		return x;
+		<< x;
 	};
 ```
 
@@ -82,7 +82,6 @@ In most cases, a comma is equivalent to a semicolon. There is a difference betwe
 `blocks` allows you to 'link' values from one scope into another. It uses the `~`.
 The basic concept of a link is to move values from the scope of the left operand into the scope of the right operand.
 The basic rules of how this works are: "Evaluate the left hand operator until it becomes either an `unterminated` code block or a primitive value; start the right hand operator with the primitive or the values in the block as members of its own scope."
-In the special case of `unterminated` block being the right hand operator, the right block will just be appended onto the left block.
 
 The right hand term must be either an `unterminated` code block or an instance of a `static` code block. Otherwise, it will raise an error.
 An instance of a static code block can either be an in-line block or an instantiated `dynamic` block. Either way, the right hand operator must be a case in which the imperative is to run code. The exception to this rule is when the right hand operator is an unterminated block; in this case, a special procedure will be followed.
@@ -161,7 +160,7 @@ an equivalent to `while` loops,
 	i: 0;
 	[i < 3](some code; i++)[true]; // post-check always loops the code, but pre-check may prevent it from being run.
 	
-but no direct equivalent to for loops. Since a for loop is only shorthand for a while loop in most languages, those can be used instead. This may be inconvenient for some developers, but converting while loops to for loops is a simple transpilation, so if they're opinionated they can do it that way.
+but no direct equivalent to for loops. Since a for loop is only shorthand for a while loop in most languages, those can be used instead. This may be inconvenient for some developers, but converting while loops to for loops is a simple transpilation or macro, so if they're opinionated they can do it that way.
 
 tokens `if`, `while`, `do`, `for`, and the generic `condition` will be ignored by the compiler and may be included for readability. This means they are not valid names.
 
@@ -185,7 +184,7 @@ a "$" prefix defines a code block as `dynamic`; the block is not evaluated immed
 
 	sum: $(x, y){ x + y };
 	
-A code block without "$" prefix will evaluate into its return value after failing to run and is called `static"`
+A code block without "$" prefix will evaluate into its return value after running and is called `static"`
 
 `static` code blocks will do their post-check before returning. If the check succeeds, the block will run again with its scope preserved. It will only break this cycle if its post-check fails or if `<<` is explicitly called.
 
@@ -220,7 +219,7 @@ A final type of code block is `unterminated`. if a code block does not return an
 		y: 2,
 	};
 	
-if a code block is intended to be `unterminated`, it can be prefixed with a `*` char. code blocks that do not terminate but have no `*` prefix will produce a warning upon compilation. Additionally, any returns will produce a warning.
+if a code block is intended to be `unterminated`, it can be prefixed with a `*` char. code blocks that do not terminate but have no `*` prefix will produce a warning upon compilation. Additionally, any returns will produce a warning on prefixed block.
 
 Since `this` is a pointer to the local scope, a `<< this;` statement will also create an unterminated code block. This is a more intentional way of creating a static code block in case the `*` prefix and compilation warnings don't put you at ease.
 
